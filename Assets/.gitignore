@@ -1,0 +1,80 @@
+# ===========================
+# Unity - Colony Under Siege
+# ===========================
+
+# Unity generated folders (never commit these)
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# Unity 3D auto-generated cache
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+MemoryCaptures/
+
+# Unity asset cache
+AssetStoreTools*
+
+# Visual Studio / Rider project files
+# (Unity re-generates these - don't commit)
+.vs/
+.idea/
+ExportedObj/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# JetBrains Rider
+.idea/
+
+# VSCode workspace settings (keep launch.json if you have custom debug configs)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Crashlytics
+crashlytics-build.properties
+.crashlytics.properties
+.crashlytics
+
+# Burst compiler cache
+/[Bb]urst*
+
+# Addressables (generated)
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/**/[Aa]ddressables[Ss]ettings.asset.meta
+/[Aa]ssets/[Ss]tream[Aa]ssets/aa/*
+/[Aa]ssets/[Ss]tream[Aa]ssets/aa.meta
+
+# WebGL cache
+/[Aa]ssets/Plugins/WebGL/
+
+# Packages lock (optional — some teams commit this for reproducibility)
+# Packages/packages-lock.json
+
+# ===========================
+# Git LFS tracked types (via .gitattributes)
+# These are NOT ignored — just a reminder they're LFS-managed
+# ===========================
+# *.png *.jpg *.psd *.fbx *.wav *.mp3 *.ogg etc.
+# See .gitattributes for the full LFS configuration
