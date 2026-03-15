@@ -33,6 +33,10 @@ public class InventoryManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+
+        InitializeWeaponDefaults();          
+        Debug.Log("[InventoryManager] Initialized.");
     }
 
     // ---------------------------------------------------------------
@@ -80,12 +84,6 @@ public class InventoryManager : MonoBehaviour
     // ---------------------------------------------------------------
     // Initialization
     // ---------------------------------------------------------------
-
-    private void Start()
-    {
-        InitializeWeaponDefaults();
-        Debug.Log("[InventoryManager] Initialized.");
-    }
 
     /// <summary>
     /// Sets default magazine sizes and max reserve values for every weapon type.
