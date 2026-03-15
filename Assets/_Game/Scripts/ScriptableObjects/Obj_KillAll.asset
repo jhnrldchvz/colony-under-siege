@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Objective
   objectiveText: Eliminate all threats
   objectiveId: obj_killall
-  type: 0
+  type: 1
   requiredCount: 1
   requiredItemId: 
