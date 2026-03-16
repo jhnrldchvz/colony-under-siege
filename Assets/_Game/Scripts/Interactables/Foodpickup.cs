@@ -1,50 +1,96 @@
 using UnityEngine;
+using TMPro;
 
-/// <summary>
-/// FoodPickup — restores player health when collected.
-///
-/// Can be triggered two ways:
-///   - Player presses E while looking at it (IInteractable)
-///   - Player walks over it (OnTriggerEnter — set Collider to Is Trigger)
-///
-/// Setup:
-///   1. Add this script to any GameObject with a Collider.
-///   2. For walk-over pickup: check "Is Trigger" on the Collider.
-///      For press-E pickup: set layer to "Interactable", uncheck Is Trigger.
-///   3. Set healAmount in the Inspector.
-///   4. Dropped by EnemyAI — assign this prefab to the enemy's Loot Drop Prefab slot.
-/// </summary>
-public class FoodPickup : MonoBehaviour, IInteractable
+public class FoodPickup : MonoBehaviour
 {
     [Header("Healing")]
-    [Tooltip("How much health this food restores")]
-    public int healAmount = 25;
-
-    [Header("Display")]
+    public int    healAmount  = 25;
     public string displayName = "Ration Pack";
 
-    // Called when player presses E while looking at this object
-    public void Interact(PlayerController player)
+    [Header("Rotation")]
+    public float rotateSpeed    = 90f;
+
+    [Header("Float")]
+    public float floatAmplitude = 0.15f;
+    public float floatSpeed     = 2f;
+
+    [Header("Proximity Label")]
+    public Canvas          labelCanvas;
+    public TextMeshProUGUI labelText;
+    public float           labelRange = 4f;
+    public float           fadeSpeed  = 8f;
+
+    [Header("Quick Outline")]
+    public Outline outline;
+
+    private Vector3     _startPos;
+    private float       _phase;
+    private Transform   _player;
+    private Camera      _cam;
+    private CanvasGroup _cg;
+    private bool        _collected = false;
+
+    private void Start()
     {
-        Collect(player);
+        _startPos = transform.position;
+        _phase    = Random.Range(0f, Mathf.PI * 2f);
+
+        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        if (p != null) _player = p.transform;
+        _cam = Camera.main;
+
+        if (labelCanvas != null)
+        {
+            _cg       = labelCanvas.gameObject.GetComponent<CanvasGroup>();
+            if (_cg == null) _cg = labelCanvas.gameObject.AddComponent<CanvasGroup>();
+            _cg.alpha = 0f;
+            labelCanvas.gameObject.SetActive(false);
+        }
+
+        if (labelText != null)
+            labelText.text = $"{displayName}\n<size=70%>Walk to pick up</size>";
+
+        if (outline != null) outline.enabled = false;
     }
 
-    // Called when player walks over this object (Collider must be Is Trigger)
+    private void Update()
+    {
+        if (_collected) return;
+
+        transform.Rotate(0f, rotateSpeed * Time.deltaTime, 0f, Space.World);
+
+        float newY = _startPos.y +
+                     Mathf.Sin((Time.time + _phase) * floatSpeed) * floatAmplitude;
+        transform.position = new Vector3(_startPos.x, newY, _startPos.z);
+
+        if (_player == null) return;
+        float dist = Vector3.Distance(transform.position, _player.position);
+        bool  near = dist <= labelRange;
+
+        if (outline != null) outline.enabled = near;
+
+        if (_cg != null)
+        {
+            _cg.alpha = Mathf.Lerp(_cg.alpha, near ? 1f : 0f,
+                                   Time.deltaTime * fadeSpeed);
+            bool active = _cg.alpha > 0.01f;
+            if (labelCanvas.gameObject.activeSelf != active)
+                labelCanvas.gameObject.SetActive(active);
+            if (_cam != null && active)
+                labelCanvas.transform.LookAt(
+                    labelCanvas.transform.position + _cam.transform.forward);
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
+        if (_collected) return;
         PlayerController player = other.GetComponent<PlayerController>();
-        if (player != null)
-            Collect(player);
-    }
-
-    private void Collect(PlayerController player)
-    {
         if (player == null || !player.IsAlive) return;
 
+        _collected = true;
         player.Heal(healAmount);
-
-        Debug.Log($"[FoodPickup] Player collected '{displayName}' — healed {healAmount} HP.");
-
+        Debug.Log($"[FoodPickup] Collected '{displayName}' — healed {healAmount} HP.");
         Destroy(gameObject);
     }
 }

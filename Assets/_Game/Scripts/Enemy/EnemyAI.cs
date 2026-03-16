@@ -470,40 +470,43 @@ public class EnemyAI : MonoBehaviour
     // ---------------------------------------------------------------
 
     private void Die()
+{
+    if (!IsAlive) return;
+
+    IsAlive = false;
+    SetState(EnemyState.Dead);
+    _agent.enabled = false;
+
+    if (_animator != null)
+        _animator.SetTrigger(AnimDie);
+
+    if (EnemyManager.Instance != null)
+        EnemyManager.Instance.DeregisterEnemy(this);
+
+    // ← ADD THESE DEBUG LINES
+    Debug.Log($"[EnemyAI] {gameObject.name} died. " +
+              $"lootDropPrefab={lootDropPrefab} " +
+              $"dropChance={dropChance} " +
+              $"roll={Random.value}");
+
+    if (lootDropPrefab != null && Random.value <= dropChance)
     {
-        if (!IsAlive) return;
-
-        IsAlive = false;
-        SetState(EnemyState.Dead);
-
-        // Disable NavMeshAgent so the corpse stops moving
-        _agent.enabled = false;
-
-        // Play death animation if available
-        if (_animator != null)
-            _animator.SetTrigger(AnimDie);
-
-        // Notify EnemyManager — updates kill count, checks all-dead condition
-        if (EnemyManager.Instance != null)
-            EnemyManager.Instance.DeregisterEnemy(this);
-
-        // Roll for loot drop
-        if (lootDropPrefab != null && Random.value <= dropChance)
-        {
-            Vector3 dropPosition = transform.position + Vector3.up * 0.2f;
-            Instantiate(lootDropPrefab, dropPosition, Quaternion.identity);
-            Debug.Log($"[EnemyAI] {gameObject.name} dropped loot.");
-        }
-
-        // Disable collider so bullets/raycasts don't hit the corpse
-        Collider col = GetComponent<Collider>();
-        if (col != null) col.enabled = false;
-
-        // Destroy after delay to allow death animation to play
-        Destroy(gameObject, destroyDelay);
-
-        Debug.Log($"[EnemyAI] {gameObject.name} died.");
+        Vector3 dropPosition = transform.position + Vector3.up * 0.05f;
+        GameObject dropped = Instantiate(lootDropPrefab, dropPosition, Quaternion.identity);
+        Debug.Log($"[EnemyAI] Dropped: {dropped.name} at {dropPosition}");
     }
+    else
+    {
+        Debug.Log($"[EnemyAI] No drop — " +
+                  $"prefabNull={lootDropPrefab == null} " +
+                  $"dropChance={dropChance}");
+    }
+
+    Collider col = GetComponent<Collider>();
+    if (col != null) col.enabled = false;
+
+    Destroy(gameObject, destroyDelay);
+}
 
     // ---------------------------------------------------------------
     // Utility

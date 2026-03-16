@@ -1,50 +1,99 @@
 using UnityEngine;
+using TMPro;
 
-/// <summary>
-/// WeaponPickup — gives the player a weapon with a full magazine and reserve ammo.
-///
-/// When the player presses E while looking at this object:
-///   - Calls InventoryManager.GiveWeaponAmmo() — fills mag and seeds reserve
-///   - Destroys itself (weapon is "picked up")
-///
-/// Setup:
-///   1. Add this script to any GameObject with a Collider.
-///   2. Set the GameObject's layer to "Interactable".
-///   3. Set weaponType and reserveAmmoToGive in the Inspector.
-///   4. Place in the level where you want the player to find this weapon.
-///
-/// Note:
-///   WeaponPickup only handles ammo — it doesn't swap the player's mesh or
-///   animations. That belongs in WeaponController (a future script).
-///   For now it ensures the player has ammo ready when WeaponController is built.
-/// </summary>
-public class WeaponPickup : MonoBehaviour, IInteractable
+public class WeaponPickup : MonoBehaviour
 {
     [Header("Weapon")]
-    [Tooltip("Which weapon type this pickup represents")]
-    public InventoryManager.WeaponType weaponType = InventoryManager.WeaponType.Rifle;
+    public InventoryManager.WeaponType weaponType     = InventoryManager.WeaponType.Rifle;
+    public int    reserveAmmoToGive = 90;
+    public string displayName       = "Assault Rifle";
+    public bool   destroyOnPickup   = true;
 
-    [Tooltip("Reserve ammo given alongside the full magazine")]
-    public int reserveAmmoToGive = 90;
+    [Header("Rotation")]
+    public float rotateSpeed    = 90f;
 
-    [Header("Display")]
-    public string displayName = "Assault Rifle";
+    [Header("Float")]
+    public float floatAmplitude = 0.15f;
+    public float floatSpeed     = 2f;
 
-    [Header("One-time pickup")]
-    [Tooltip("If true, this pickup disappears after being collected once")]
-    public bool destroyOnPickup = true;
+    [Header("Proximity Label")]
+    public Canvas          labelCanvas;
+    public TextMeshProUGUI labelText;
+    public float           labelRange = 5f;
+    public float           fadeSpeed  = 8f;
 
-    public void Interact(PlayerController player)
+    [Header("Quick Outline")]
+    public Outline outline;
+
+    private Vector3     _startPos;
+    private float       _phase;
+    private Transform   _player;
+    private Camera      _cam;
+    private CanvasGroup _cg;
+    private bool        _collected = false;
+
+    private void Start()
     {
+        _startPos = transform.position;
+        _phase    = Random.Range(0f, Mathf.PI * 2f);
+
+        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        if (p != null) _player = p.transform;
+        _cam = Camera.main;
+
+        if (labelCanvas != null)
+        {
+            _cg       = labelCanvas.gameObject.GetComponent<CanvasGroup>();
+            if (_cg == null) _cg = labelCanvas.gameObject.AddComponent<CanvasGroup>();
+            _cg.alpha = 0f;
+            labelCanvas.gameObject.SetActive(false);
+        }
+
+        if (labelText != null)
+            labelText.text = $"{displayName}\n<size=70%>Walk to pick up</size>";
+
+        if (outline != null) outline.enabled = false;
+    }
+
+    private void Update()
+    {
+        if (_collected) return;
+
+        transform.Rotate(0f, rotateSpeed * Time.deltaTime, 0f, Space.World);
+
+        float newY = _startPos.y +
+                     Mathf.Sin((Time.time + _phase) * floatSpeed) * floatAmplitude;
+        transform.position = new Vector3(_startPos.x, newY, _startPos.z);
+
+        if (_player == null) return;
+        float dist = Vector3.Distance(transform.position, _player.position);
+        bool  near = dist <= labelRange;
+
+        if (outline != null) outline.enabled = near;
+
+        if (_cg != null)
+        {
+            _cg.alpha = Mathf.Lerp(_cg.alpha, near ? 1f : 0f,
+                                   Time.deltaTime * fadeSpeed);
+            bool active = _cg.alpha > 0.01f;
+            if (labelCanvas.gameObject.activeSelf != active)
+                labelCanvas.gameObject.SetActive(active);
+            if (_cam != null && active)
+                labelCanvas.transform.LookAt(
+                    labelCanvas.transform.position + _cam.transform.forward);
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (_collected) return;
+        PlayerController player = other.GetComponent<PlayerController>();
+        if (player == null) return;
         if (InventoryManager.Instance == null) return;
 
-        // Fill magazine + seed reserve
+        _collected = true;
         InventoryManager.Instance.GiveWeaponAmmo(weaponType, reserveAmmoToGive);
-
-        Debug.Log($"[WeaponPickup] Player picked up '{displayName}'. " +
-                  $"Type: {weaponType}, Reserve given: {reserveAmmoToGive}");
-
-        if (destroyOnPickup)
-            Destroy(gameObject);
+        Debug.Log($"[WeaponPickup] Picked up '{displayName}'.");
+        if (destroyOnPickup) Destroy(gameObject);
     }
 }
