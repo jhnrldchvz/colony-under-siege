@@ -172,32 +172,33 @@ public class EnemyAI : MonoBehaviour
     // ---------------------------------------------------------------
 
     private void Awake()
-    {
-        _agent    = GetComponent<NavMeshAgent>();
-        _animator = GetComponent<Animator>(); // Optional — may be null
-
-        _currentHealth = maxHealth;
-    }
+{
+    _agent    = GetComponent<NavMeshAgent>();
+    _animator = GetComponent<Animator>();
+    _currentHealth = maxHealth; // This gets overwritten by ApplyDifficultySettings in Start()
+}
 
     private void Start()
-    {
-        // Find the player by tag — ensure the Player GameObject has tag "Player"
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
-            _player = playerObj.GetComponent<PlayerController>();
+{
+    GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+    if (playerObj != null)
+        _player = playerObj.GetComponent<PlayerController>();
 
-        if (_player == null)
-            Debug.LogWarning("[EnemyAI] Could not find Player. " +
-                             "Make sure Player GameObject has tag 'Player'.");
+    if (_player == null)
+        Debug.LogWarning("[EnemyAI] Could not find Player.");
 
-        // Register with EnemyManager so it tracks kill count
-        if (EnemyManager.Instance != null)
-            EnemyManager.Instance.RegisterEnemy(this);
+    if (EnemyManager.Instance != null)
+        EnemyManager.Instance.RegisterEnemy(this);
 
-        // Start patrolling
-        SetState(EnemyState.Patrol);
-        GoToNextPatrolPoint();
-    }
+    // ← ADD THIS: apply current difficulty tier immediately on spawn
+    if (DifficultyManager.Instance != null)
+        ApplyDifficultySettings(
+            DifficultyManager.Instance.BuildSettings(
+                DifficultyManager.Instance.CurrentTier));
+
+    SetState(EnemyState.Patrol);
+    GoToNextPatrolPoint();
+}
 
     private void Update()
     {
