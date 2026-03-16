@@ -128,30 +128,33 @@ public class WeaponController : MonoBehaviour
     }
 
     private void PerformRaycast()
+{
+    if (cameraHolder == null) return;
+ 
+    Vector3 origin    = cameraHolder.position;
+    Vector3 direction = cameraHolder.forward;
+ 
+    Debug.DrawRay(origin, direction * range, Color.red, 1f);
+ 
+    bool hitEnemy = false;
+ 
+    if (Physics.Raycast(origin, direction, out RaycastHit hit, range))
     {
-        if (cameraHolder == null) return;
-
-        // Ray fires from cameraHolder position in its exact forward direction
-        // This always matches where the player is looking regardless of position
-        Vector3 origin    = cameraHolder.position;
-        Vector3 direction = cameraHolder.forward;
-
-        Debug.DrawRay(origin, direction * range, Color.red, 1f);
-
-        // NO layer mask — hits everything, filters by component
-        if (Physics.Raycast(origin, direction, out RaycastHit hit, range))
+        Debug.Log($"[WeaponController] Hit: {hit.collider.gameObject.name}");
+ 
+        EnemyAI enemy = hit.collider.GetComponent<EnemyAI>();
+        if (enemy != null)
         {
-            Debug.Log($"[WeaponController] Hit: {hit.collider.gameObject.name}");
-
-            EnemyAI enemy = hit.collider.GetComponent<EnemyAI>();
-            if (enemy != null)
-            {
-                enemy.TakeDamage(damagePerShot);
-                SpawnHitEffect(hit.point, hit.normal);
-                Debug.Log($"[WeaponController] Enemy damaged! HP remaining: enemy script tracks this");
-            }
+            enemy.TakeDamage(damagePerShot);
+            SpawnHitEffect(hit.point, hit.normal);
+            hitEnemy = true;
         }
     }
+ 
+    // Report to DifficultyManager — true = hit enemy, false = missed
+    if (DifficultyManager.Instance != null)
+        DifficultyManager.Instance.ReportShot(hitEnemy);
+}
 
     // ---------------------------------------------------------------
     // Reload

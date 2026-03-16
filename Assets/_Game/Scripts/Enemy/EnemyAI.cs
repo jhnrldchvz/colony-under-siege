@@ -508,6 +508,47 @@ public class EnemyAI : MonoBehaviour
     // Utility
     // ---------------------------------------------------------------
 
+
+// ---------------------------------------------------------------
+// ADD THIS METHOD to EnemyAI.cs
+// Place it in the "Utility" region near the bottom of the class,
+// just above OnDrawGizmosSelected()
+// ---------------------------------------------------------------
+ 
+/// <summary>
+/// Called by DifficultyManager when the player's accuracy
+/// crosses a threshold. Updates all live stats instantly.
+/// HP is clamped so enemies never heal above their new max.
+/// </summary>
+public void ApplyDifficultySettings(EnemyDifficultySettings settings)
+{
+    patrolSpeed    = settings.patrolSpeed;
+    chaseSpeed     = settings.chaseSpeed;
+    attackDamage   = settings.attackDamage;
+    detectionRange = settings.detectionRange;
+    attackRange    = settings.attackRange;
+    attackCooldown = settings.attackCooldown;
+ 
+    // Update max health — clamp current HP so it never exceeds new max
+    maxHealth      = settings.maxHealth;
+    _currentHealth = Mathf.Min(_currentHealth, maxHealth);
+ 
+    // Apply new speed to NavMeshAgent immediately based on current state
+    if (_agent != null && _agent.enabled)
+    {
+        _agent.speed = CurrentState == EnemyState.Chase ||
+                       CurrentState == EnemyState.Attack
+            ? chaseSpeed
+            : patrolSpeed;
+    }
+ 
+    Debug.Log($"[EnemyAI] {gameObject.name} difficulty updated → " +
+              $"HP:{_currentHealth}/{maxHealth} " +
+              $"Dmg:{attackDamage} " +
+              $"Sight:{detectionRange}m " +
+              $"Speed:{chaseSpeed}");
+}
+
     private void FaceTarget(Vector3 targetPosition)
     {
         Vector3 direction = (targetPosition - transform.position).normalized;
