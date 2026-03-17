@@ -94,6 +94,9 @@ public class EnemyAI : MonoBehaviour
     // Inspector — Health
     // ---------------------------------------------------------------
 
+    [Header("Health Bar")]
+    public EnemyHealthBar healthBar;
+
     [Header("Health")]
     [Tooltip("Enemy health points")]
     public int maxHealth = 50;
@@ -456,6 +459,8 @@ public class EnemyAI : MonoBehaviour
 
         Debug.Log($"[EnemyAI] {gameObject.name} took {amount} damage. " +
                   $"HP: {_currentHealth}/{maxHealth}");
+
+        healthBar?.UpdateHealth(_currentHealth, maxHealth);
 
         // Getting hit always triggers chase if not already attacking
         if (CurrentState == EnemyState.Patrol || CurrentState == EnemyState.Return)
