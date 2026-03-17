@@ -128,33 +128,40 @@ public class WeaponController : MonoBehaviour
     }
 
     private void PerformRaycast()
-{
-    if (cameraHolder == null) return;
- 
-    Vector3 origin    = cameraHolder.position;
-    Vector3 direction = cameraHolder.forward;
- 
-    Debug.DrawRay(origin, direction * range, Color.red, 1f);
- 
-    bool hitEnemy = false;
- 
-    if (Physics.Raycast(origin, direction, out RaycastHit hit, range))
     {
-        Debug.Log($"[WeaponController] Hit: {hit.collider.gameObject.name}");
- 
-        EnemyAI enemy = hit.collider.GetComponent<EnemyAI>();
-        if (enemy != null)
+        if (cameraHolder == null) return;
+
+        Vector3 origin    = cameraHolder.position;
+        Vector3 direction = cameraHolder.forward;
+
+        Debug.DrawRay(origin, direction * range, Color.red, 1f);
+
+        bool hitEnemy = false;
+
+        // Single raycast — stops at the FIRST object hit
+        // Prevents multi-enemy damage when enemies are close together
+        if (Physics.Raycast(origin, direction, out RaycastHit hit, range))
         {
-            enemy.TakeDamage(damagePerShot);
-            SpawnHitEffect(hit.point, hit.normal);
-            hitEnemy = true;
+            Debug.Log($"[WeaponController] Hit: {hit.collider.gameObject.name}");
+
+            // Check the hit collider AND its parent (for multi-collider setups)
+            EnemyAI enemy = hit.collider.GetComponent<EnemyAI>() ??
+                            hit.collider.GetComponentInParent<EnemyAI>();
+
+            if (enemy != null && enemy.IsAlive)
+            {
+                enemy.TakeDamage(damagePerShot);
+                SpawnHitEffect(hit.point, hit.normal);
+                hitEnemy = true;
+                Debug.Log($"[WeaponController] Damaged: {enemy.gameObject.name} " +
+                          $"for {damagePerShot} dmg.");
+            }
         }
+
+        // Report accuracy to DifficultyManager
+        if (DifficultyManager.Instance != null)
+            DifficultyManager.Instance.ReportShot(hitEnemy);
     }
- 
-    // Report to DifficultyManager — true = hit enemy, false = missed
-    if (DifficultyManager.Instance != null)
-        DifficultyManager.Instance.ReportShot(hitEnemy);
-}
 
     // ---------------------------------------------------------------
     // Reload

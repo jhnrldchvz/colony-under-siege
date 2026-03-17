@@ -97,6 +97,10 @@ public class EnemyAI : MonoBehaviour
     [Header("Health Bar")]
     public EnemyHealthBar healthBar;
 
+    [Header("Preset")]
+    [Tooltip("Assign an EnemyStats asset to override all Inspector values below")]
+    public EnemyStats statPreset;
+
     [Header("Health")]
     [Tooltip("Enemy health points")]
     public int maxHealth = 50;
@@ -157,6 +161,18 @@ public class EnemyAI : MonoBehaviour
     private int   _currentHealth;
 
     // ---------------------------------------------------------------
+    // Private — base stats (stored after ApplyStats, used by DDA multipliers)
+    // ---------------------------------------------------------------
+
+    private int   _baseHealth;
+    private float _basePatrolSpeed;
+    private float _baseChaseSpeed;
+    private int   _baseAttackDamage;
+    private float _baseDetectionRange;
+    private float _baseAttackRange;
+    private float _baseAttackCooldown;
+
+    // ---------------------------------------------------------------
     // Private — return
     // ---------------------------------------------------------------
 
@@ -175,33 +191,38 @@ public class EnemyAI : MonoBehaviour
     // ---------------------------------------------------------------
 
     private void Awake()
-{
-    _agent    = GetComponent<NavMeshAgent>();
-    _animator = GetComponent<Animator>();
-    _currentHealth = maxHealth; // This gets overwritten by ApplyDifficultySettings in Start()
-}
+    {
+        _agent         = GetComponent<NavMeshAgent>();
+        _animator      = GetComponent<Animator>();
+        _currentHealth = maxHealth;
+
+        // Apply stat preset before anything else — overrides all Inspector values
+        if (statPreset != null) ApplyStats(statPreset);
+
+        if (healthBar != null) healthBar.Initialize(maxHealth);
+    }
 
     private void Start()
-{
-    GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-    if (playerObj != null)
-        _player = playerObj.GetComponent<PlayerController>();
+    {
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+            _player = playerObj.GetComponent<PlayerController>();
 
-    if (_player == null)
-        Debug.LogWarning("[EnemyAI] Could not find Player.");
+        if (_player == null)
+            Debug.LogWarning("[EnemyAI] Could not find Player.");
 
-    if (EnemyManager.Instance != null)
-        EnemyManager.Instance.RegisterEnemy(this);
+        if (EnemyManager.Instance != null)
+            EnemyManager.Instance.RegisterEnemy(this);
 
-    // ← ADD THIS: apply current difficulty tier immediately on spawn
-    if (DifficultyManager.Instance != null)
-        ApplyDifficultySettings(
-            DifficultyManager.Instance.BuildSettings(
-                DifficultyManager.Instance.CurrentTier));
+        // Apply current difficulty tier immediately on spawn
+        if (DifficultyManager.Instance != null)
+            ApplyDifficultySettings(
+                DifficultyManager.Instance.BuildSettings(
+                    DifficultyManager.Instance.CurrentTier));
 
-    SetState(EnemyState.Patrol);
-    GoToNextPatrolPoint();
-}
+        SetState(EnemyState.Patrol);
+        GoToNextPatrolPoint();
+    }
 
     private void Update()
     {
@@ -475,88 +496,123 @@ public class EnemyAI : MonoBehaviour
     // ---------------------------------------------------------------
 
     private void Die()
-{
-    if (!IsAlive) return;
-
-    IsAlive = false;
-    SetState(EnemyState.Dead);
-    _agent.enabled = false;
-
-    if (_animator != null)
-        _animator.SetTrigger(AnimDie);
-
-    if (EnemyManager.Instance != null)
-        EnemyManager.Instance.DeregisterEnemy(this);
-
-    // ← ADD THESE DEBUG LINES
-    Debug.Log($"[EnemyAI] {gameObject.name} died. " +
-              $"lootDropPrefab={lootDropPrefab} " +
-              $"dropChance={dropChance} " +
-              $"roll={Random.value}");
-
-    if (lootDropPrefab != null && Random.value <= dropChance)
     {
-        Vector3 dropPosition = transform.position + Vector3.up * 0.05f;
-        GameObject dropped = Instantiate(lootDropPrefab, dropPosition, Quaternion.identity);
-        Debug.Log($"[EnemyAI] Dropped: {dropped.name} at {dropPosition}");
-    }
-    else
-    {
-        Debug.Log($"[EnemyAI] No drop — " +
-                  $"prefabNull={lootDropPrefab == null} " +
-                  $"dropChance={dropChance}");
-    }
+        if (!IsAlive) return;
 
-    Collider col = GetComponent<Collider>();
-    if (col != null) col.enabled = false;
+        IsAlive = false;
+        SetState(EnemyState.Dead);
+        _agent.enabled = false;
 
-    Destroy(gameObject, destroyDelay);
-}
+        if (_animator != null)
+            _animator.SetTrigger(AnimDie);
+
+        if (EnemyManager.Instance != null)
+            EnemyManager.Instance.DeregisterEnemy(this);
+
+        Debug.Log($"[EnemyAI] {gameObject.name} died.");
+
+        if (lootDropPrefab != null && Random.value <= dropChance)
+        {
+            Vector3    dropPosition = transform.position + Vector3.up * 0.5f;
+            GameObject dropped      = Instantiate(lootDropPrefab, dropPosition, Quaternion.identity);
+            Debug.Log($"[EnemyAI] Dropped: {dropped.name}");
+        }
+
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = false;
+
+        Destroy(gameObject, destroyDelay);
+    }
 
     // ---------------------------------------------------------------
     // Utility
     // ---------------------------------------------------------------
 
 
-// ---------------------------------------------------------------
-// ADD THIS METHOD to EnemyAI.cs
-// Place it in the "Utility" region near the bottom of the class,
-// just above OnDrawGizmosSelected()
-// ---------------------------------------------------------------
- 
-/// <summary>
-/// Called by DifficultyManager when the player's accuracy
-/// crosses a threshold. Updates all live stats instantly.
-/// HP is clamped so enemies never heal above their new max.
-/// </summary>
-public void ApplyDifficultySettings(EnemyDifficultySettings settings)
-{
-    patrolSpeed    = settings.patrolSpeed;
-    chaseSpeed     = settings.chaseSpeed;
-    attackDamage   = settings.attackDamage;
-    detectionRange = settings.detectionRange;
-    attackRange    = settings.attackRange;
-    attackCooldown = settings.attackCooldown;
- 
-    // Update max health — clamp current HP so it never exceeds new max
-    maxHealth      = settings.maxHealth;
-    _currentHealth = Mathf.Min(_currentHealth, maxHealth);
- 
-    // Apply new speed to NavMeshAgent immediately based on current state
-    if (_agent != null && _agent.enabled)
+    /// <summary>
+    /// Called by DifficultyManager when accuracy crosses a threshold.
+    /// Uses multipliers so every enemy type scales proportionally
+    /// from its own base stats — roster balance is preserved at all tiers.
+    /// </summary>
+    public void ApplyDifficultySettings(EnemyDifficultySettings settings)
     {
-        _agent.speed = CurrentState == EnemyState.Chase ||
-                       CurrentState == EnemyState.Attack
-            ? chaseSpeed
-            : patrolSpeed;
+        // If base stats were never set (no preset assigned), use current values
+        if (_baseHealth == 0)
+        {
+            _baseHealth         = maxHealth;
+            _basePatrolSpeed    = patrolSpeed;
+            _baseChaseSpeed     = chaseSpeed;
+            _baseAttackDamage   = attackDamage;
+            _baseDetectionRange = detectionRange;
+            _baseAttackRange    = attackRange;
+            _baseAttackCooldown = attackCooldown;
+        }
+
+        // Apply multipliers on top of base stats
+        patrolSpeed    = _basePatrolSpeed    * settings.patrolSpeedMult;
+        chaseSpeed     = _baseChaseSpeed     * settings.chaseSpeedMult;
+        attackDamage   = Mathf.RoundToInt(_baseAttackDamage   * settings.damageMult);
+        detectionRange = _baseDetectionRange * settings.detectionMult;
+        attackRange    = _baseAttackRange    * settings.attackRangeMult;
+        attackCooldown = _baseAttackCooldown * settings.cooldownMult;
+
+        maxHealth      = Mathf.RoundToInt(_baseHealth * settings.healthMult);
+        _currentHealth = Mathf.Min(_currentHealth, maxHealth);
+
+        // Update NavMeshAgent speed immediately
+        if (_agent != null && _agent.enabled)
+        {
+            _agent.speed = CurrentState == EnemyState.Chase ||
+                           CurrentState == EnemyState.Attack
+                ? chaseSpeed
+                : patrolSpeed;
+        }
+
+        // Don't update health bar here — DDA applies to all enemies simultaneously
+        // which would make all bars flash even on enemies that weren't damaged.
+        // Health bar only updates in TakeDamage() when the enemy is actually hit.
+
+        Debug.Log($"[EnemyAI] {gameObject.name} DDA updated → " +
+                  $"HP:{_currentHealth}/{maxHealth} " +
+                  $"Dmg:{attackDamage} " +
+                  $"Sight:{detectionRange:F1}m " +
+                  $"Chase:{chaseSpeed:F1}");
     }
- 
-    Debug.Log($"[EnemyAI] {gameObject.name} difficulty updated → " +
-              $"HP:{_currentHealth}/{maxHealth} " +
-              $"Dmg:{attackDamage} " +
-              $"Sight:{detectionRange}m " +
-              $"Speed:{chaseSpeed}");
-}
+
+    /// <summary>
+    /// Applies an EnemyStats ScriptableObject preset to this enemy.
+    /// Called in Awake so stats are set before Start() runs.
+    /// </summary>
+    public void ApplyStats(EnemyStats stats)
+    {
+        if (stats == null) return;
+
+        maxHealth       = stats.maxHealth;
+        _currentHealth  = stats.maxHealth;
+        patrolSpeed     = stats.patrolSpeed;
+        chaseSpeed      = stats.chaseSpeed;
+        detectionRange  = stats.detectionRange;
+        fieldOfView     = stats.fieldOfView;
+        losePlayerRange = stats.loseRange;
+        attackRange     = stats.attackRange;
+        attackDamage    = stats.attackDamage;
+        attackCooldown  = stats.attackCooldown;
+        dropChance      = stats.dropChance;
+
+        // Store base values — DDA uses these as the multiplier foundation
+        _baseHealth         = maxHealth;
+        _basePatrolSpeed    = patrolSpeed;
+        _baseChaseSpeed     = chaseSpeed;
+        _baseAttackDamage   = attackDamage;
+        _baseDetectionRange = detectionRange;
+        _baseAttackRange    = attackRange;
+        _baseAttackCooldown = attackCooldown;
+
+        if (healthBar != null) healthBar.Initialize(maxHealth);
+
+        Debug.Log($"[EnemyAI] {gameObject.name} loaded preset: {stats.enemyName} " +
+                  $"HP:{maxHealth} Chase:{chaseSpeed} Dmg:{attackDamage}");
+    }
 
     private void FaceTarget(Vector3 targetPosition)
     {
@@ -586,7 +642,7 @@ public void ApplyDifficultySettings(EnemyDifficultySettings settings)
         Gizmos.color = Color.white;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
 
-        // Lose player range — red sphere
+        // Lose player range — red sphere  
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, losePlayerRange);
 
