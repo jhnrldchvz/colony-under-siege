@@ -124,10 +124,14 @@ public class WeaponController : MonoBehaviour
     {
         if (InventoryManager.Instance != null)
         {
-            // Seed starting ammo for all configured weapons
+            // Seed starting ammo only if the weapon has NO ammo at all
+            // Checks both magazine AND reserve — prevents re-seeding after reload
             foreach (WeaponConfig cfg in weapons)
             {
-                if (InventoryManager.Instance.GetCurrentAmmo(cfg.type) == 0)
+                bool magEmpty     = InventoryManager.Instance.GetCurrentAmmo(cfg.type) == 0;
+                bool reserveEmpty = InventoryManager.Instance.GetReserveAmmo(cfg.type) == 0;
+
+                if (magEmpty && reserveEmpty)
                     InventoryManager.Instance.GiveWeaponAmmo(cfg.type, cfg.startingAmmo);
             }
         }
