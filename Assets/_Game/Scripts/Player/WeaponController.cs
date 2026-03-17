@@ -4,12 +4,48 @@ using UnityEngine.InputSystem;
 
 public class WeaponController : MonoBehaviour
 {
-    [Header("Weapon")]
-    public InventoryManager.WeaponType currentWeaponType = InventoryManager.WeaponType.Rifle;
-    public int   damagePerShot = 25;
-    public float range         = 50f;
-    public float fireRate      = 0.1f;
-    public float reloadTime    = 1.8f;
+    // ---------------------------------------------------------------
+    // Weapon config — stats per weapon type
+    // ---------------------------------------------------------------
+
+    [System.Serializable]
+    public class WeaponConfig
+    {
+        public InventoryManager.WeaponType type;
+        public string     displayName  = "Rifle";
+        public Sprite     icon;
+        public GameObject modelObject;  // Drag weapon model here (child of CameraHolder)
+        public int        damage       = 5;
+        public float   range        = 50f;
+        public float   fireRate     = 0.1f;   // Seconds between shots
+        public float   reloadTime   = 1.8f;
+        public int     startingAmmo = 90;      // Reserve ammo given at start
+    }
+
+    [Header("Weapon Configs")]
+    public WeaponConfig[] weapons = new WeaponConfig[]
+    {
+        new WeaponConfig
+        {
+            type        = InventoryManager.WeaponType.Rifle,
+            displayName = "Rifle",
+            damage      = 5,
+            range       = 50f,
+            fireRate    = 0.1f,
+            reloadTime  = 1.8f,
+            startingAmmo = 90
+        },
+        new WeaponConfig
+        {
+            type        = InventoryManager.WeaponType.Pistol,
+            displayName = "Pistol",
+            damage      = 2,
+            range       = 30f,
+            fireRate    = 0.25f,
+            reloadTime  = 1.2f,
+            startingAmmo = 36
+        }
+    };
 
     [Header("References")]
     public PlayerController playerController;
@@ -23,14 +59,22 @@ public class WeaponController : MonoBehaviour
     public float      muzzleFlashDuration = 0.05f;
 
     // ---------------------------------------------------------------
-    // Private
+    // Private — runtime state
     // ---------------------------------------------------------------
 
-    private float  _nextFireTime = 0f;
-    private bool   _isReloading  = false;
-    private bool   _fireHeld     = false;
+    private int    _currentWeaponIndex = 0;      // Index into weapons[]
+    private float  _nextFireTime       = 0f;
+    private bool   _isReloading        = false;
+    private bool   _fireHeld           = false;
 
     private InputSystem_Actions _inputs;
+
+    // ---------------------------------------------------------------
+    // Convenience accessors
+    // ---------------------------------------------------------------
+
+    private WeaponConfig Current => weapons[_currentWeaponIndex];
+    public  InventoryManager.WeaponType currentWeaponType => Current.type;
 
     // ---------------------------------------------------------------
     // Lifecycle
@@ -80,17 +124,33 @@ public class WeaponController : MonoBehaviour
     {
         if (InventoryManager.Instance != null)
         {
-            if (InventoryManager.Instance.GetCurrentAmmo(currentWeaponType) == 0)
-                InventoryManager.Instance.GiveWeaponAmmo(currentWeaponType, 90);
+            // Seed starting ammo for all configured weapons
+            foreach (WeaponConfig cfg in weapons)
+            {
+                if (InventoryManager.Instance.GetCurrentAmmo(cfg.type) == 0)
+                    InventoryManager.Instance.GiveWeaponAmmo(cfg.type, cfg.startingAmmo);
+            }
         }
 
-        Debug.Log($"[WeaponController] Ready. Weapon: {currentWeaponType}");
+        RefreshHUD();
+        ShowActiveModel();
+        Debug.Log($"[WeaponController] Ready. Weapon: {Current.displayName}");
     }
 
     private void Update()
     {
         if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
         if (playerController != null && !playerController.IsAlive) return;
+
+        // Weapon switching — keys 1/2
+        if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchToIndex(0);
+        if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchToIndex(1);
+
+        // Scroll wheel switching
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (scroll > 0f)  SwitchToIndex((_currentWeaponIndex + 1) % weapons.Length);
+        if (scroll < 0f)  SwitchToIndex((_currentWeaponIndex - 1 + weapons.Length) % weapons.Length);
+
         if (_isReloading) return;
 
         if (_fireHeld && Time.time >= _nextFireTime)
@@ -98,8 +158,8 @@ public class WeaponController : MonoBehaviour
 
         // Auto-reload when empty
         if (InventoryManager.Instance != null &&
-            !InventoryManager.Instance.HasAmmo(currentWeaponType) &&
-            InventoryManager.Instance.CanReload(currentWeaponType))
+            !InventoryManager.Instance.HasAmmo(Current.type) &&
+            InventoryManager.Instance.CanReload(Current.type))
         {
             TryReload();
         }
@@ -113,18 +173,20 @@ public class WeaponController : MonoBehaviour
     {
         if (InventoryManager.Instance == null) return;
 
-        if (!InventoryManager.Instance.UseAmmo(currentWeaponType))
+        if (!InventoryManager.Instance.UseAmmo(Current.type))
         {
             TryReload();
             return;
         }
 
-        _nextFireTime = Time.time + fireRate;
+        _nextFireTime = Time.time + Current.fireRate;
 
         PerformRaycast();
         SpawnMuzzleFlash();
+        RefreshHUD();
 
-        Debug.Log($"[WeaponController] Fired. Ammo: {InventoryManager.Instance.GetCurrentAmmo(currentWeaponType)}");
+        Debug.Log($"[WeaponController] Fired {Current.displayName}. " +
+                  $"Ammo: {InventoryManager.Instance.GetCurrentAmmo(Current.type)}");
     }
 
     private void PerformRaycast()
@@ -134,27 +196,24 @@ public class WeaponController : MonoBehaviour
         Vector3 origin    = cameraHolder.position;
         Vector3 direction = cameraHolder.forward;
 
-        Debug.DrawRay(origin, direction * range, Color.red, 1f);
+        Debug.DrawRay(origin, direction * Current.range, Color.red, 1f);
 
         bool hitEnemy = false;
 
-        // Single raycast — stops at the FIRST object hit
-        // Prevents multi-enemy damage when enemies are close together
-        if (Physics.Raycast(origin, direction, out RaycastHit hit, range))
+        if (Physics.Raycast(origin, direction, out RaycastHit hit, Current.range))
         {
             Debug.Log($"[WeaponController] Hit: {hit.collider.gameObject.name}");
 
-            // Check the hit collider AND its parent (for multi-collider setups)
             EnemyAI enemy = hit.collider.GetComponent<EnemyAI>() ??
                             hit.collider.GetComponentInParent<EnemyAI>();
 
             if (enemy != null && enemy.IsAlive)
             {
-                enemy.TakeDamage(damagePerShot);
+                enemy.TakeDamage(Current.damage);
                 SpawnHitEffect(hit.point, hit.normal);
                 hitEnemy = true;
-                Debug.Log($"[WeaponController] Damaged: {enemy.gameObject.name} " +
-                          $"for {damagePerShot} dmg.");
+                Debug.Log($"[WeaponController] {Current.displayName} hit: {enemy.gameObject.name} " +
+                          $"for {Current.damage} dmg.");
             }
         }
 
@@ -172,7 +231,7 @@ public class WeaponController : MonoBehaviour
         if (_isReloading) return;
         if (InventoryManager.Instance == null) return;
 
-        if (!InventoryManager.Instance.CanReload(currentWeaponType))
+        if (!InventoryManager.Instance.CanReload(Current.type))
         {
             Debug.Log("[WeaponController] Cannot reload.");
             return;
@@ -184,27 +243,78 @@ public class WeaponController : MonoBehaviour
     private IEnumerator ReloadCoroutine()
     {
         _isReloading = true;
-        Debug.Log($"[WeaponController] Reloading...");
+        Debug.Log($"[WeaponController] Reloading {Current.displayName}...");
 
-        yield return new WaitForSeconds(reloadTime);
+        yield return new WaitForSeconds(Current.reloadTime);
 
         if (InventoryManager.Instance != null)
-            InventoryManager.Instance.Reload(currentWeaponType);
+            InventoryManager.Instance.Reload(Current.type);
 
         _isReloading = false;
-        Debug.Log("[WeaponController] Reload complete.");
+        RefreshHUD();
+        Debug.Log($"[WeaponController] {Current.displayName} reload complete.");
     }
 
     // ---------------------------------------------------------------
     // Weapon switching
     // ---------------------------------------------------------------
 
+    private void SwitchToIndex(int index)
+    {
+        if (index == _currentWeaponIndex) return;
+        if (index < 0 || index >= weapons.Length) return;
+
+        // Cancel any active reload
+        if (_isReloading)
+        {
+            StopAllCoroutines();
+            _isReloading = false;
+        }
+
+        _currentWeaponIndex = index;
+        RefreshHUD();
+        ShowActiveModel();
+        Debug.Log($"[WeaponController] Switched to: {Current.displayName}");
+    }
+
+    /// <summary>External switch by weapon type — used by pickup scripts.</summary>
     public void SwitchWeapon(InventoryManager.WeaponType newType)
     {
-        if (_isReloading) StopAllCoroutines();
-        _isReloading      = false;
-        currentWeaponType = newType;
-        Debug.Log($"[WeaponController] Switched to: {newType}");
+        for (int i = 0; i < weapons.Length; i++)
+        {
+            if (weapons[i].type == newType)
+            {
+                SwitchToIndex(i);
+                return;
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Model visibility
+    // ---------------------------------------------------------------
+
+    private void ShowActiveModel()
+    {
+        for (int i = 0; i < weapons.Length; i++)
+        {
+            if (weapons[i].modelObject != null)
+                weapons[i].modelObject.SetActive(i == _currentWeaponIndex);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // HUD refresh
+    // ---------------------------------------------------------------
+
+    private void RefreshHUD()
+    {
+        if (UIManager.Instance == null || InventoryManager.Instance == null) return;
+
+        int current = InventoryManager.Instance.GetCurrentAmmo(Current.type);
+        int reserve = InventoryManager.Instance.GetReserveAmmo(Current.type);
+        UIManager.Instance.UpdateAmmo(current, reserve);
+        UIManager.Instance.UpdateWeaponDisplay(Current.displayName, Current.icon);
     }
 
     // ---------------------------------------------------------------
@@ -238,6 +348,6 @@ public class WeaponController : MonoBehaviour
     {
         if (cameraHolder == null) return;
         Gizmos.color = Color.red;
-        Gizmos.DrawRay(cameraHolder.position, cameraHolder.forward * range);
+        Gizmos.DrawRay(cameraHolder.position, cameraHolder.forward * Current.range);
     }
 }

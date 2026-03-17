@@ -69,6 +69,9 @@ public class UIManager : MonoBehaviour
     [Tooltip("Text showing current / max ammo, e.g. '24 / 90'")]
     public TextMeshProUGUI ammoText;
 
+    [Tooltip("Image displaying the current weapon icon — swap sprite on switch")]
+    public UnityEngine.UI.Image weaponIcon;
+
     [Header("HUD — Objectives")]
     [Tooltip("Small text panel in the corner listing active objectives")]
     public TextMeshProUGUI objectiveText;
@@ -283,6 +286,20 @@ public class UIManager : MonoBehaviour
     {
         if (ammoText != null)
             ammoText.text = $"{current} / {reserve}";
+    }
+
+    /// <summary>
+    /// Updates the weapon icon image in the HUD.
+    /// WeaponController calls this on switch and on start.
+    /// </summary>
+    public void UpdateWeaponDisplay(string weaponName, Sprite icon)
+    {
+        if (weaponIcon == null) return;
+        if (icon != null)
+        {
+            weaponIcon.sprite  = icon;
+            weaponIcon.enabled = true;
+        }
     }
 
     /// <summary>
