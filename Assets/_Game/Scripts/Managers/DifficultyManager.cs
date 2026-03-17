@@ -63,43 +63,43 @@ public class DifficultyManager : MonoBehaviour
     public int minShotsBeforeEval   = 5;
 
     // ---------------------------------------------------------------
-    // Inspector — Easy tier stats
+    // Inspector — Easy tier multipliers (applied on top of each enemy's base stats)
     // ---------------------------------------------------------------
 
-    [Header("Easy Tier — Enemy Stats")]
-    public float easyPatrolSpeed    = 2f;
-    public float easyChaseSpeed     = 3.5f;
-    public int   easyMaxHealth      = 35;
-    public int   easyAttackDamage   = 7;
-    public float easyDetectionRange = 7f;
-    public float easyAttackRange    = 2f;
-    public float easyAttackCooldown = 2f;
+    [Header("Easy Tier — Multipliers (< 1 = weaker)")]
+    public float easyHealthMult       = 0.7f;
+    public float easyPatrolSpeedMult  = 0.8f;
+    public float easyChaseSpeedMult   = 0.7f;
+    public float easyDamageMult       = 0.6f;
+    public float easyDetectionMult    = 0.7f;
+    public float easyAttackRangeMult  = 0.9f;
+    public float easyCooldownMult     = 1.5f;  // Higher = slower attacks
 
     // ---------------------------------------------------------------
-    // Inspector — Normal tier stats
+    // Inspector — Normal tier multipliers (1.0 = base stats unchanged)
     // ---------------------------------------------------------------
 
-    [Header("Normal Tier — Enemy Stats")]
-    public float normalPatrolSpeed    = 2.5f;
-    public float normalChaseSpeed     = 5f;
-    public int   normalMaxHealth      = 50;
-    public int   normalAttackDamage   = 10;
-    public float normalDetectionRange = 10f;
-    public float normalAttackRange    = 2f;
-    public float normalAttackCooldown = 1.5f;
+    [Header("Normal Tier — Multipliers (1.0 = base stats)")]
+    public float normalHealthMult       = 1.0f;
+    public float normalPatrolSpeedMult  = 1.0f;
+    public float normalChaseSpeedMult   = 1.0f;
+    public float normalDamageMult       = 1.0f;
+    public float normalDetectionMult    = 1.0f;
+    public float normalAttackRangeMult  = 1.0f;
+    public float normalCooldownMult     = 1.0f;
 
     // ---------------------------------------------------------------
-    // Inspector — Hard tier stats
+    // Inspector — Hard tier multipliers (> 1 = stronger)
     // ---------------------------------------------------------------
 
-    [Header("Hard Tier — Enemy Stats")]
-    public float hardPatrolSpeed    = 4f;
-    public float hardChaseSpeed     = 8f;
-    public int   hardMaxHealth      = 80;
-    public int   hardAttackDamage   = 20;
-    public float hardDetectionRange = 14f;
-    public float hardAttackRange    = 3f;
-    public float hardAttackCooldown = 0.8f;
+    [Header("Hard Tier — Multipliers (> 1 = stronger)")]
+    public float hardHealthMult       = 1.5f;
+    public float hardPatrolSpeedMult  = 1.5f;
+    public float hardChaseSpeedMult   = 1.6f;
+    public float hardDamageMult       = 2.0f;
+    public float hardDetectionMult    = 1.4f;
+    public float hardAttackRangeMult  = 1.2f;
+    public float hardCooldownMult     = 0.6f;  // Lower = faster attacks
 
     // ---------------------------------------------------------------
     // Events
@@ -257,37 +257,37 @@ private System.Collections.IEnumerator InitializeAfterEnemiesRegister()
             case DifficultyTier.Easy:
                 return new EnemyDifficultySettings
                 {
-                    patrolSpeed    = easyPatrolSpeed,
-                    chaseSpeed     = easyChaseSpeed,
-                    maxHealth      = easyMaxHealth,
-                    attackDamage   = easyAttackDamage,
-                    detectionRange = easyDetectionRange,
-                    attackRange    = easyAttackRange,
-                    attackCooldown = easyAttackCooldown
+                    healthMult       = easyHealthMult,
+                    patrolSpeedMult  = easyPatrolSpeedMult,
+                    chaseSpeedMult   = easyChaseSpeedMult,
+                    damageMult       = easyDamageMult,
+                    detectionMult    = easyDetectionMult,
+                    attackRangeMult  = easyAttackRangeMult,
+                    cooldownMult     = easyCooldownMult
                 };
 
             case DifficultyTier.Hard:
                 return new EnemyDifficultySettings
                 {
-                    patrolSpeed    = hardPatrolSpeed,
-                    chaseSpeed     = hardChaseSpeed,
-                    maxHealth      = hardMaxHealth,
-                    attackDamage   = hardAttackDamage,
-                    detectionRange = hardDetectionRange,
-                    attackRange    = hardAttackRange,
-                    attackCooldown = hardAttackCooldown
+                    healthMult       = hardHealthMult,
+                    patrolSpeedMult  = hardPatrolSpeedMult,
+                    chaseSpeedMult   = hardChaseSpeedMult,
+                    damageMult       = hardDamageMult,
+                    detectionMult    = hardDetectionMult,
+                    attackRangeMult  = hardAttackRangeMult,
+                    cooldownMult     = hardCooldownMult
                 };
 
             default: // Normal
                 return new EnemyDifficultySettings
                 {
-                    patrolSpeed    = normalPatrolSpeed,
-                    chaseSpeed     = normalChaseSpeed,
-                    maxHealth      = normalMaxHealth,
-                    attackDamage   = normalAttackDamage,
-                    detectionRange = normalDetectionRange,
-                    attackRange    = normalAttackRange,
-                    attackCooldown = normalAttackCooldown
+                    healthMult       = normalHealthMult,
+                    patrolSpeedMult  = normalPatrolSpeedMult,
+                    chaseSpeedMult   = normalChaseSpeedMult,
+                    damageMult       = normalDamageMult,
+                    detectionMult    = normalDetectionMult,
+                    attackRangeMult  = normalAttackRangeMult,
+                    cooldownMult     = normalCooldownMult
                 };
         }
     }
@@ -324,14 +324,25 @@ private System.Collections.IEnumerator InitializeAfterEnemiesRegister()
 /// Plain data struct carrying all stat values for one difficulty tier.
 /// DifficultyManager builds it, EnemyAI.ApplyDifficultySettings() reads it.
 /// </summary>
+/// <summary>
+/// Multiplier-based difficulty settings.
+/// Each value is multiplied against the enemy's own base stats
+/// so every enemy type scales proportionally — roster balance
+/// is preserved at all difficulty tiers.
+///
+/// Normal tier = all 1.0 (no change from base).
+/// Easy tier   = values below 1.0 (weaker enemies).
+/// Hard tier   = values above 1.0 (stronger enemies).
+/// cooldownMult is inverted — higher value = slower attacks.
+/// </summary>
 [System.Serializable]
 public struct EnemyDifficultySettings
 {
-    public float patrolSpeed;
-    public float chaseSpeed;
-    public int   maxHealth;
-    public int   attackDamage;
-    public float detectionRange;
-    public float attackRange;
-    public float attackCooldown;
+    public float healthMult;
+    public float patrolSpeedMult;
+    public float chaseSpeedMult;
+    public float damageMult;
+    public float detectionMult;
+    public float attackRangeMult;
+    public float cooldownMult;
 }

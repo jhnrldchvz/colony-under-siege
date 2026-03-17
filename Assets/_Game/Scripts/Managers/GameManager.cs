@@ -246,17 +246,17 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Quit button — exits play mode in Editor, quits the built application.
+    /// Quit button — returns to main menu from in-game.
+    /// Main menu has its own quit that exits the application.
     /// </summary>
     public void OnQuitPressed()
     {
-        Debug.Log("[GameManager] Quitting...");
-
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+        Debug.Log("[GameManager] Returning to main menu...");
+        Time.timeScale = 1f;
+        _isPaused = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+        LoadScene(0); // Index 0 = MainMenu scene in Build Settings
     }
 
     // ---------------------------------------------------------------

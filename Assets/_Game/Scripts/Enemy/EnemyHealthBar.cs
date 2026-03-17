@@ -1,7 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-
 /// <summary>
 /// EnemyHealthBar — world-space health bar displayed above an enemy.
 ///
@@ -31,9 +29,6 @@ public class EnemyHealthBar : MonoBehaviour
     [Header("UI References")]
     [Tooltip("The filled image used as the health bar")]
     public Image        fillImage;
-
-    [Tooltip("Optional text showing HP numbers e.g. '35 / 50'")]
-    public TextMeshProUGUI hpText;
 
     [Header("Colors")]
     public Color fullColor    = new Color(0.2f, 0.85f, 0.2f, 1f);  // Green
@@ -159,7 +154,6 @@ public class EnemyHealthBar : MonoBehaviour
         if (fillImage != null)
             fillImage.fillAmount = 1f;
 
-        UpdateHPText();
         SetVisible(false, instant: true);
     }
 
@@ -175,12 +169,6 @@ public class EnemyHealthBar : MonoBehaviour
 
     _isDamaged  = true;
     _hideTimer  = hideDelay;
-
-    // ADD THIS:
-    Debug.Log($"[HealthBar] UpdateHealth called — " +
-              $"HP:{currentHP}/{maxHP} " +
-              $"targetFill:{_targetFill:F2} " +
-              $"fillImage:{fillImage}");
 
     SetVisible(true);
 }
@@ -198,12 +186,6 @@ public class EnemyHealthBar : MonoBehaviour
         if      (pct > 0.6f) fillImage.color = Color.Lerp(midColor,  fullColor, (pct - 0.6f) / 0.4f);
         else if (pct > 0.3f) fillImage.color = Color.Lerp(lowColor,  midColor,  (pct - 0.3f) / 0.3f);
         else                 fillImage.color = lowColor;
-    }
-
-    private void UpdateHPText()
-    {
-        if (hpText != null)
-            hpText.text = $"{_currentHP} / {_maxHealth}";
     }
 
     private bool IsPlayerNearby()

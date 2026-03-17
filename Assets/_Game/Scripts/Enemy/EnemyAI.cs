@@ -19,7 +19,7 @@ using UnityEngine.AI;
 ///   3. Create child GameObjects as waypoints and assign them to the
 ///      patrolPoints array in the Inspector.
 ///   4. Set the Player tag to "Player" in Edit → Project Settings → Tags.
-///   5. Tune detection range, attack range, and damage in the Inspector.
+///   5. Assign an EnemyStats preset — all combat/movement stats come from there.
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyAI : MonoBehaviour
@@ -38,7 +38,7 @@ public class EnemyAI : MonoBehaviour
     }
 
     // ---------------------------------------------------------------
-    // Inspector — Patrol
+    // Inspector — scene-specific (not stored in EnemyStats)
     // ---------------------------------------------------------------
 
     [Header("Patrol")]
@@ -48,78 +48,21 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("How long the enemy waits at each waypoint before moving on")]
     public float patrolWaitTime = 2f;
 
-    [Tooltip("Movement speed while patrolling")]
-    public float patrolSpeed = 2.5f;
-
-    // ---------------------------------------------------------------
-    // Inspector — Detection
-    // ---------------------------------------------------------------
-
     [Header("Detection")]
-    [Tooltip("Radius within which the enemy can see the player")]
-    public float detectionRange = 10f;
-
-    [Tooltip("Field of view angle — enemy only detects player within this cone")]
-    public float fieldOfView = 110f;
-
-    [Tooltip("The enemy will lose the player if they exceed this distance")]
-    public float losePlayerRange = 14f;
-
     [Tooltip("Layer mask for line-of-sight check — set to everything except the enemy layer")]
     public LayerMask sightBlockLayers;
 
-    // ---------------------------------------------------------------
-    // Inspector — Chase
-    // ---------------------------------------------------------------
-
-    [Header("Chase")]
-    [Tooltip("Movement speed while chasing the player")]
-    public float chaseSpeed = 5f;
-
-    // ---------------------------------------------------------------
-    // Inspector — Attack
-    // ---------------------------------------------------------------
-
-    [Header("Attack")]
-    [Tooltip("Distance at which the enemy stops and begins attacking")]
-    public float attackRange = 2f;
-
-    [Tooltip("Damage dealt per hit")]
-    public int attackDamage = 10;
-
-    [Tooltip("Seconds between each attack")]
-    public float attackCooldown = 1.5f;
-
-    // ---------------------------------------------------------------
-    // Inspector — Health
-    // ---------------------------------------------------------------
-
-    [Header("Health Bar")]
+    [Header("UI")]
     public EnemyHealthBar healthBar;
+    public EnemyNameLabel nameLabel;
 
     [Header("Preset")]
-    [Tooltip("Assign an EnemyStats asset to override all Inspector values below")]
+    [Tooltip("Defines all combat and movement stats for this enemy type")]
     public EnemyStats statPreset;
-
-    [Header("Health")]
-    [Tooltip("Enemy health points")]
-    public int maxHealth = 50;
-
-    // ---------------------------------------------------------------
-    // Inspector — Loot
-    // ---------------------------------------------------------------
 
     [Header("Loot")]
     [Tooltip("Prefab to spawn when this enemy dies. Assign a PickupItem prefab.")]
     public GameObject lootDropPrefab;
-
-    [Tooltip("0 = never drops, 1 = always drops. 0.75 = 75% chance.")]
-    [Range(0f, 1f)]
-    public float dropChance = 0.75f;
-
-    // ---------------------------------------------------------------
-    // Inspector — Death
-    // ---------------------------------------------------------------
 
     [Header("Death")]
     [Tooltip("Seconds before the enemy GameObject is destroyed after dying")]
@@ -133,32 +76,19 @@ public class EnemyAI : MonoBehaviour
     public bool IsAlive            { get; private set; } = true;
 
     // ---------------------------------------------------------------
-    // Private — components
+    // Private — runtime stats (set by ApplyStats / DDA)
     // ---------------------------------------------------------------
 
-    private NavMeshAgent    _agent;
-    private Animator        _animator;      // Optional — null-checked throughout
-    private PlayerController _player;
-
-    // ---------------------------------------------------------------
-    // Private — patrol
-    // ---------------------------------------------------------------
-
-    private int   _patrolIndex    = 0;
-    private bool  _isWaiting      = false;
-    private float _waitTimer      = 0f;
-
-    // ---------------------------------------------------------------
-    // Private — attack
-    // ---------------------------------------------------------------
-
-    private float _attackTimer    = 0f;
-
-    // ---------------------------------------------------------------
-    // Private — health
-    // ---------------------------------------------------------------
-
-    private int   _currentHealth;
+    private int   maxHealth      = 50;
+    private float patrolSpeed    = 2.5f;
+    private float chaseSpeed     = 5f;
+    private float detectionRange = 10f;
+    private float fieldOfView    = 110f;
+    private float losePlayerRange= 14f;
+    private float attackRange    = 2f;
+    private int   attackDamage   = 10;
+    private float attackCooldown = 1.5f;
+    private float dropChance     = 0.75f;
 
     // ---------------------------------------------------------------
     // Private — base stats (stored after ApplyStats, used by DDA multipliers)
@@ -173,18 +103,36 @@ public class EnemyAI : MonoBehaviour
     private float _baseAttackCooldown;
 
     // ---------------------------------------------------------------
-    // Private — return
+    // Private — components
     // ---------------------------------------------------------------
 
-    private Vector3 _lastPatrolPosition; // Where to return to after losing player
+    private NavMeshAgent     _agent;
+    private Animator         _animator;
+    private PlayerController _player;
+
+    // ---------------------------------------------------------------
+    // Private — patrol
+    // ---------------------------------------------------------------
+
+    private int   _patrolIndex = 0;
+    private bool  _isWaiting   = false;
+    private float _waitTimer   = 0f;
+
+    // ---------------------------------------------------------------
+    // Private — attack / health / return
+    // ---------------------------------------------------------------
+
+    private float   _attackTimer = 0f;
+    private int     _currentHealth;
+    private Vector3 _lastPatrolPosition;
 
     // ---------------------------------------------------------------
     // Animator parameter hashes — cached for performance
     // ---------------------------------------------------------------
 
-    private static readonly int AnimSpeed    = Animator.StringToHash("Speed");
-    private static readonly int AnimAttack   = Animator.StringToHash("Attack");
-    private static readonly int AnimDie      = Animator.StringToHash("Die");
+    private static readonly int AnimSpeed  = Animator.StringToHash("Speed");
+    private static readonly int AnimAttack = Animator.StringToHash("Attack");
+    private static readonly int AnimDie    = Animator.StringToHash("Die");
 
     // ---------------------------------------------------------------
     // Lifecycle
@@ -196,10 +144,12 @@ public class EnemyAI : MonoBehaviour
         _animator      = GetComponent<Animator>();
         _currentHealth = maxHealth;
 
-        // Apply stat preset before anything else — overrides all Inspector values
-        if (statPreset != null) ApplyStats(statPreset);
+        if (statPreset != null)
+            ApplyStats(statPreset);
+        else
+            Debug.LogWarning($"[EnemyAI] {gameObject.name} has no statPreset assigned.");
 
-        if (healthBar != null) healthBar.Initialize(maxHealth);
+        healthBar?.Initialize(maxHealth);
     }
 
     private void Start()
@@ -211,10 +161,8 @@ public class EnemyAI : MonoBehaviour
         if (_player == null)
             Debug.LogWarning("[EnemyAI] Could not find Player.");
 
-        if (EnemyManager.Instance != null)
-            EnemyManager.Instance.RegisterEnemy(this);
+        EnemyManager.Instance?.RegisterEnemy(this);
 
-        // Apply current difficulty tier immediately on spawn
         if (DifficultyManager.Instance != null)
             ApplyDifficultySettings(
                 DifficultyManager.Instance.BuildSettings(
@@ -226,14 +174,11 @@ public class EnemyAI : MonoBehaviour
 
     private void Update()
     {
-        // Freeze AI while game is not Playing (pause, game over, win)
         if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
         if (!IsAlive) return;
 
-        // Tick the attack cooldown every frame
         _attackTimer -= Time.deltaTime;
 
-        // Run the correct FSM state logic
         switch (CurrentState)
         {
             case EnemyState.Patrol:  UpdatePatrol();  break;
@@ -249,7 +194,6 @@ public class EnemyAI : MonoBehaviour
 
     private void UpdatePatrol()
     {
-        // Always scan for the player while patrolling
         if (CanSeePlayer())
         {
             SetState(EnemyState.Chase);
@@ -271,14 +215,11 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        // Check if we've reached the current waypoint
         if (!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
         {
-            // Save this as a return point in case we need to come back
             _lastPatrolPosition = transform.position;
-
-            _isWaiting = true;
-            _waitTimer = patrolWaitTime;
+            _isWaiting          = true;
+            _waitTimer          = patrolWaitTime;
         }
     }
 
@@ -288,8 +229,6 @@ public class EnemyAI : MonoBehaviour
 
         _agent.speed = patrolSpeed;
         _agent.SetDestination(patrolPoints[_patrolIndex].position);
-
-        // Advance to next waypoint, loop back to start
         _patrolIndex = (_patrolIndex + 1) % patrolPoints.Length;
     }
 
@@ -305,23 +244,20 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        float distToPlayer = Vector3.Distance(transform.position, _player.transform.position);
+        float dist = Vector3.Distance(transform.position, _player.transform.position);
 
-        // Player is close enough to attack
-        if (distToPlayer <= attackRange)
+        if (dist <= attackRange)
         {
             SetState(EnemyState.Attack);
             return;
         }
 
-        // Player escaped — return to patrol
-        if (distToPlayer > losePlayerRange)
+        if (dist > losePlayerRange)
         {
             SetState(EnemyState.Return);
             return;
         }
 
-        // Keep chasing
         _agent.speed = chaseSpeed;
         _agent.SetDestination(_player.transform.position);
         SetAnimatorSpeed(_agent.velocity.magnitude);
@@ -339,23 +275,18 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        float distToPlayer = Vector3.Distance(transform.position, _player.transform.position);
+        float dist = Vector3.Distance(transform.position, _player.transform.position);
 
-        // Player moved away — chase again
-        if (distToPlayer > attackRange)
+        if (dist > attackRange)
         {
             SetState(EnemyState.Chase);
             return;
         }
 
-        // Face the player while attacking
         FaceTarget(_player.transform.position);
-
-        // Stop moving while attacking
         _agent.SetDestination(transform.position);
         SetAnimatorSpeed(0f);
 
-        // Attack on cooldown
         if (_attackTimer <= 0f)
         {
             PerformAttack();
@@ -379,7 +310,6 @@ public class EnemyAI : MonoBehaviour
 
     private void UpdateReturn()
     {
-        // If the player wanders back into range, resume chase
         if (CanSeePlayer())
         {
             SetState(EnemyState.Chase);
@@ -388,7 +318,6 @@ public class EnemyAI : MonoBehaviour
 
         SetAnimatorSpeed(_agent.velocity.magnitude);
 
-        // Once we're back near the last patrol position, resume patrol
         if (!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
         {
             SetState(EnemyState.Patrol);
@@ -411,18 +340,14 @@ public class EnemyAI : MonoBehaviour
             case EnemyState.Patrol:
                 _agent.speed = patrolSpeed;
                 break;
-
             case EnemyState.Chase:
                 _agent.speed = chaseSpeed;
                 break;
-
             case EnemyState.Attack:
-                _agent.ResetPath(); // Stop moving
+                _agent.ResetPath();
                 break;
-
             case EnemyState.Return:
                 _agent.speed = patrolSpeed;
-                // Head back to last known patrol position
                 if (_lastPatrolPosition != Vector3.zero)
                     _agent.SetDestination(_lastPatrolPosition);
                 break;
@@ -435,10 +360,6 @@ public class EnemyAI : MonoBehaviour
     // Detection — line-of-sight check
     // ---------------------------------------------------------------
 
-    /// <summary>
-    /// Returns true if the player is within detection range AND field of view
-    /// AND there is no obstacle blocking the line of sight.
-    /// </summary>
     private bool CanSeePlayer()
     {
         if (_player == null || !_player.IsAlive) return false;
@@ -446,21 +367,16 @@ public class EnemyAI : MonoBehaviour
         Vector3 toPlayer = _player.transform.position - transform.position;
         float   distance = toPlayer.magnitude;
 
-        // Outside detection range — skip
         if (distance > detectionRange) return false;
 
-        // Outside field of view cone — skip
         float angle = Vector3.Angle(transform.forward, toPlayer);
         if (angle > fieldOfView * 0.5f) return false;
 
-        // Line-of-sight check — is there a wall in the way?
         if (Physics.Raycast(transform.position + Vector3.up * 1f,
                             toPlayer.normalized,
                             distance,
                             sightBlockLayers))
-        {
-            return false; // Something is blocking the view
-        }
+            return false;
 
         return true;
     }
@@ -469,21 +385,16 @@ public class EnemyAI : MonoBehaviour
     // Health — taking damage
     // ---------------------------------------------------------------
 
-    /// <summary>
-    /// Called by WeaponController (bullet hit) when the player shoots this enemy.
-    /// </summary>
     public void TakeDamage(int amount)
     {
         if (!IsAlive) return;
 
         _currentHealth = Mathf.Max(0, _currentHealth - amount);
 
-        Debug.Log($"[EnemyAI] {gameObject.name} took {amount} damage. " +
-                  $"HP: {_currentHealth}/{maxHealth}");
+        Debug.Log($"[EnemyAI] {gameObject.name} took {amount} damage. HP: {_currentHealth}/{maxHealth}");
 
         healthBar?.UpdateHealth(_currentHealth, maxHealth);
 
-        // Getting hit always triggers chase if not already attacking
         if (CurrentState == EnemyState.Patrol || CurrentState == EnemyState.Return)
             SetState(EnemyState.Chase);
 
@@ -506,15 +417,14 @@ public class EnemyAI : MonoBehaviour
         if (_animator != null)
             _animator.SetTrigger(AnimDie);
 
-        if (EnemyManager.Instance != null)
-            EnemyManager.Instance.DeregisterEnemy(this);
+        EnemyManager.Instance?.DeregisterEnemy(this);
 
         Debug.Log($"[EnemyAI] {gameObject.name} died.");
 
         if (lootDropPrefab != null && Random.value <= dropChance)
         {
-            Vector3    dropPosition = transform.position + Vector3.up * 0.5f;
-            GameObject dropped      = Instantiate(lootDropPrefab, dropPosition, Quaternion.identity);
+            Vector3    dropPos  = transform.position + Vector3.up * 0.5f;
+            GameObject dropped  = Instantiate(lootDropPrefab, dropPos, Quaternion.identity);
             Debug.Log($"[EnemyAI] Dropped: {dropped.name}");
         }
 
@@ -525,9 +435,8 @@ public class EnemyAI : MonoBehaviour
     }
 
     // ---------------------------------------------------------------
-    // Utility
+    // Utility — stat application
     // ---------------------------------------------------------------
-
 
     /// <summary>
     /// Called by DifficultyManager when accuracy crosses a threshold.
@@ -536,7 +445,6 @@ public class EnemyAI : MonoBehaviour
     /// </summary>
     public void ApplyDifficultySettings(EnemyDifficultySettings settings)
     {
-        // If base stats were never set (no preset assigned), use current values
         if (_baseHealth == 0)
         {
             _baseHealth         = maxHealth;
@@ -548,18 +456,15 @@ public class EnemyAI : MonoBehaviour
             _baseAttackCooldown = attackCooldown;
         }
 
-        // Apply multipliers on top of base stats
         patrolSpeed    = _basePatrolSpeed    * settings.patrolSpeedMult;
         chaseSpeed     = _baseChaseSpeed     * settings.chaseSpeedMult;
         attackDamage   = Mathf.RoundToInt(_baseAttackDamage   * settings.damageMult);
         detectionRange = _baseDetectionRange * settings.detectionMult;
         attackRange    = _baseAttackRange    * settings.attackRangeMult;
         attackCooldown = _baseAttackCooldown * settings.cooldownMult;
-
         maxHealth      = Mathf.RoundToInt(_baseHealth * settings.healthMult);
         _currentHealth = Mathf.Min(_currentHealth, maxHealth);
 
-        // Update NavMeshAgent speed immediately
         if (_agent != null && _agent.enabled)
         {
             _agent.speed = CurrentState == EnemyState.Chase ||
@@ -568,15 +473,9 @@ public class EnemyAI : MonoBehaviour
                 : patrolSpeed;
         }
 
-        // Don't update health bar here — DDA applies to all enemies simultaneously
-        // which would make all bars flash even on enemies that weren't damaged.
-        // Health bar only updates in TakeDamage() when the enemy is actually hit.
-
         Debug.Log($"[EnemyAI] {gameObject.name} DDA updated → " +
-                  $"HP:{_currentHealth}/{maxHealth} " +
-                  $"Dmg:{attackDamage} " +
-                  $"Sight:{detectionRange:F1}m " +
-                  $"Chase:{chaseSpeed:F1}");
+                  $"HP:{_currentHealth}/{maxHealth} Dmg:{attackDamage} " +
+                  $"Sight:{detectionRange:F1}m Chase:{chaseSpeed:F1}");
     }
 
     /// <summary>
@@ -587,19 +486,18 @@ public class EnemyAI : MonoBehaviour
     {
         if (stats == null) return;
 
-        maxHealth       = stats.maxHealth;
-        _currentHealth  = stats.maxHealth;
-        patrolSpeed     = stats.patrolSpeed;
-        chaseSpeed      = stats.chaseSpeed;
-        detectionRange  = stats.detectionRange;
-        fieldOfView     = stats.fieldOfView;
-        losePlayerRange = stats.loseRange;
-        attackRange     = stats.attackRange;
-        attackDamage    = stats.attackDamage;
-        attackCooldown  = stats.attackCooldown;
-        dropChance      = stats.dropChance;
+        maxHealth      = stats.maxHealth;
+        _currentHealth = stats.maxHealth;
+        patrolSpeed    = stats.patrolSpeed;
+        chaseSpeed     = stats.chaseSpeed;
+        detectionRange = stats.detectionRange;
+        fieldOfView    = stats.fieldOfView;
+        losePlayerRange= stats.loseRange;
+        attackRange    = stats.attackRange;
+        attackDamage   = stats.attackDamage;
+        attackCooldown = stats.attackCooldown;
+        dropChance     = stats.dropChance;
 
-        // Store base values — DDA uses these as the multiplier foundation
         _baseHealth         = maxHealth;
         _basePatrolSpeed    = patrolSpeed;
         _baseChaseSpeed     = chaseSpeed;
@@ -608,16 +506,21 @@ public class EnemyAI : MonoBehaviour
         _baseAttackRange    = attackRange;
         _baseAttackCooldown = attackCooldown;
 
-        if (healthBar != null) healthBar.Initialize(maxHealth);
+        healthBar?.Initialize(maxHealth);
+        nameLabel?.RefreshName();
 
         Debug.Log($"[EnemyAI] {gameObject.name} loaded preset: {stats.enemyName} " +
                   $"HP:{maxHealth} Chase:{chaseSpeed} Dmg:{attackDamage}");
     }
 
+    // ---------------------------------------------------------------
+    // Utility — movement / animation helpers
+    // ---------------------------------------------------------------
+
     private void FaceTarget(Vector3 targetPosition)
     {
         Vector3 direction = (targetPosition - transform.position).normalized;
-        direction.y = 0f; // Keep upright — don't tilt toward a crouching player
+        direction.y = 0f;
 
         if (direction != Vector3.zero)
             transform.rotation = Quaternion.Slerp(
@@ -638,19 +541,15 @@ public class EnemyAI : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        // Detection range — white sphere
         Gizmos.color = Color.white;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
 
-        // Lose player range — red sphere  
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, losePlayerRange);
 
-        // Attack range — yellow sphere
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, attackRange);
 
-        // FOV cone — cyan lines
         Gizmos.color = Color.cyan;
         Vector3 leftBound  = Quaternion.Euler(0, -fieldOfView * 0.5f, 0) * transform.forward;
         Vector3 rightBound = Quaternion.Euler(0,  fieldOfView * 0.5f, 0) * transform.forward;
