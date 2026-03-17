@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -37,12 +38,21 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
-        CurrentHealth    = maxHealth;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible   = false;
+        CurrentHealth = maxHealth;
 
         if (UIManager.Instance != null)
             UIManager.Instance.SetMaxHealth(maxHealth);
+
+        // Wait 2 frames before locking cursor — fixes post-restart input focus
+        StartCoroutine(InitCursorAfterLoad());
+    }
+
+    private IEnumerator InitCursorAfterLoad()
+    {
+        yield return null;
+        yield return null;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible   = false;
     }
 
     private void Update()
@@ -141,6 +151,15 @@ public class PlayerController : MonoBehaviour
         if (!IsAlive) return;
         CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
         if (UIManager.Instance != null) UIManager.Instance.UpdateHealth(CurrentHealth);
+
+        // Trigger visual hit feedback
+        HitEffects fx = GetComponent<HitEffects>();
+        if (fx != null)
+        {
+            float intensity = Mathf.Clamp01((float)amount / maxHealth);
+            fx.TriggerHit(intensity);
+        }
+
         Debug.Log($"[Player] Took {amount} dmg. HP:{CurrentHealth}/{maxHealth}");
         if (CurrentHealth <= 0) Die();
     }

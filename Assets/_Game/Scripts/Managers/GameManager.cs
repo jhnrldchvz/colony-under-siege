@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// GameManager — Singleton orchestrator for Colony Under Siege.
@@ -30,7 +31,51 @@ public class GameManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject); // Persist across scene loads
+
+        EnsureEventSystem();
+
+        // Reset state every time any scene loads
+        SceneManager.sceneLoaded += OnSceneLoaded;
+
         InitializeGame();
+    }
+
+    /// <summary>
+    /// Guarantees one EventSystem exists for the entire session.
+    /// Without it, no UI button click is ever detected.
+    /// </summary>
+    private void EnsureEventSystem()
+    {
+        if (EventSystem.current != null)
+        {
+            // Make the existing one persist so it survives scene transitions
+            DontDestroyOnLoad(EventSystem.current.gameObject);
+            return;
+        }
+
+        // None found — create one that will persist for the whole game
+        GameObject es = new GameObject("EventSystem");
+        es.AddComponent<EventSystem>();
+        es.AddComponent<StandaloneInputModule>();
+        DontDestroyOnLoad(es);
+        Debug.Log("[GameManager] Created persistent EventSystem.");
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Clears GameOver/Win/Paused state after any scene transition
+        _isPaused      = false;
+        Time.timeScale = 1f;
+        CurrentState   = GameState.Playing;
+
+        // Main menu always needs cursor visible and unlocked
+        if (scene.buildIndex == 0)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible   = true;
+        }
+
+        Debug.Log($"[GameManager] Scene loaded: {scene.name} — state reset to Playing");
     }
 
     // ---------------------------------------------------------------
@@ -107,13 +152,15 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+        // Disable all GameManager input on main menu scene
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex == 0)
+            return;
+
         // Only allow pause toggle during active play or paused state
         if (CurrentState == GameState.Playing || CurrentState == GameState.Paused)
         {
             if (Input.GetKeyDown(KeyCode.Escape))
-            {
                 TogglePause();
-            }
         }
     }
 
@@ -308,7 +355,7 @@ public class GameManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Clear static reference if this instance is destroyed
+        SceneManager.sceneLoaded -= OnSceneLoaded;
         if (Instance == this) Instance = null;
     }
 }

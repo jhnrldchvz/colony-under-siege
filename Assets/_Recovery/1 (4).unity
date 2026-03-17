@@ -1561,12 +1561,8 @@ MonoBehaviour:
   titleText: {fileID: 218067451}
   versionText: {fileID: 927177855}
   subtitleText: {fileID: 1136194611}
-  playButton: {fileID: 502362979}
-  quitButton: {fileID: 1073318304}
-  creditsButton: {fileID: 966182853}
-  backButton: {fileID: 813966776}
   gameSceneIndex: 1
-  animateTitle: 0
+  animateTitle: 1
 --- !u!1 &1491049871
 GameObject:
   m_ObjectHideFlags: 0

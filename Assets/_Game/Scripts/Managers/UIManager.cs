@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 /// <summary>
@@ -87,11 +88,9 @@ public class UIManager : MonoBehaviour
     [Header("Pause Panel")]
     [Tooltip("Optional: dim overlay behind the pause card")]
     public GameObject pauseOverlay;
-
-    // Buttons are wired in the Inspector via OnClick():
-    // Resume  → GameManager.Instance.OnResumePressed()
-    // Restart → GameManager.Instance.OnRestartPressed()
-    // Quit    → GameManager.Instance.OnQuitPressed()
+    public Button resumeButton;
+    public Button pauseRestartButton;
+    public Button quitButton;
 
     // ---------------------------------------------------------------
     // Inspector slots — Game Over panel
@@ -100,8 +99,7 @@ public class UIManager : MonoBehaviour
     [Header("Game Over Panel")]
     [Tooltip("'You died' or custom flavour text")]
     public TextMeshProUGUI gameOverMessageText;
-
-    // Restart button wired via Inspector OnClick() → GameManager.OnRestartPressed()
+    public Button gameOverRestartButton;
 
     // ---------------------------------------------------------------
     // Inspector slots — Win panel
@@ -110,9 +108,9 @@ public class UIManager : MonoBehaviour
     [Header("Win Panel")]
     [Tooltip("'Stage Complete' or custom flavour text")]
     public TextMeshProUGUI winMessageText;
-
-    [Tooltip("'Next Level' button — only visible if a next scene exists")]
-    public GameObject nextLevelButton;
+    public Button winRestartButton;
+    public Button nextLevelButton;
+    public Button mainMenuButton;
 
     // ---------------------------------------------------------------
     // Private state
@@ -138,6 +136,14 @@ public class UIManager : MonoBehaviour
             Debug.LogWarning("[UIManager] GameManager.Instance not found. " +
                              "Make sure GameManager is in the scene.");
         }
+
+        // Wire buttons in code — no Inspector OnClick() needed
+        resumeButton?         .onClick.AddListener(() => GameManager.Instance?.ResumeGame());
+        pauseRestartButton?   .onClick.AddListener(RestartScene);
+        quitButton?           .onClick.AddListener(GoToMainMenu);
+        gameOverRestartButton?.onClick.AddListener(RestartScene);
+        nextLevelButton?      .onClick.AddListener(() => { Time.timeScale = 1f; LevelManager.Instance?.LoadNextLevel(); });
+        mainMenuButton?       .onClick.AddListener(GoToMainMenu);
 
         // Start with a clean slate
         ShowHUDOnly();
@@ -243,7 +249,7 @@ public class UIManager : MonoBehaviour
         // Hide Next Level button if no next scene is configured
         // LevelManager will call ShowNextLevelButton() if one exists
         if (nextLevelButton != null)
-            nextLevelButton.SetActive(false);
+            nextLevelButton.gameObject.SetActive(false);
 
         Debug.Log("[UIManager] Win screen shown.");
     }
@@ -319,7 +325,27 @@ public class UIManager : MonoBehaviour
     public void ShowNextLevelButton()
     {
         if (nextLevelButton != null)
-            nextLevelButton.SetActive(true);
+            nextLevelButton.gameObject.SetActive(true);
+    }
+
+    // ---------------------------------------------------------------
+    // Button action helpers
+    // ---------------------------------------------------------------
+
+    private void RestartScene()
+    {
+        Time.timeScale   = 1f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private void GoToMainMenu()
+    {
+        Time.timeScale   = 1f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+        SceneManager.LoadScene(0);
     }
 
     // ---------------------------------------------------------------
