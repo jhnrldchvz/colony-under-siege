@@ -15,11 +15,14 @@ MonoBehaviour:
   enemyName: Scout
   maxHealth: 30
   patrolSpeed: 3.5
-  chaseSpeed: 8
+  chaseSpeed: 6
   detectionRange: 20
   fieldOfView: 140
   loseRange: 22
-  attackRange: 1.5
+  attackRange: 20
   attackDamage: 5
   attackCooldown: 2.2
-  dropChance: 0.5
+  isRanged: 1
+  projectilePrefab: {fileID: 5387381916628305061, guid: 6380f56948a36edf389be41d5e1433b6, type: 3}
+  preferredRange: 18
+  dropChance: 1

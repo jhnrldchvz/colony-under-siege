@@ -22,4 +22,6 @@ MonoBehaviour:
   attackRange: 1.8
   attackDamage: 5
   attackCooldown: 2.5
+  isRanged: 0
+  preferredRange: 0
   dropChance: 0.5

@@ -2,8 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// EnemyStats — ScriptableObject that defines a preset enemy configuration.
-/// Create one asset per enemy type via:
-/// right-click Project → Create → Colony Under Siege → Enemy Stats
+/// Create via: right-click Project → Create → Colony Under Siege → Enemy Stats
 /// </summary>
 [CreateAssetMenu(fileName = "EnemyStats_New",
                  menuName  = "Colony Under Siege/Enemy Stats")]
@@ -28,6 +27,16 @@ public class EnemyStats : ScriptableObject
     public float attackRange    = 2f;
     public int   attackDamage   = 10;
     public float attackCooldown = 1.5f;
+
+    [Header("Ranged Attack")]
+    [Tooltip("If true, enemy uses a projectile instead of melee")]
+    public bool  isRanged       = false;
+
+    [Tooltip("Projectile prefab to spawn — assign EnemyProjectile prefab here")]
+    public GameObject projectilePrefab;
+
+    [Tooltip("Distance the ranged enemy tries to maintain from the player")]
+    public float preferredRange = 10f;
 
     [Header("Loot")]
     [Range(0f, 1f)]

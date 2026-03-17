@@ -89,6 +89,9 @@ public class EnemyAI : MonoBehaviour
     private int   attackDamage   = 10;
     private float attackCooldown = 1.5f;
     private float dropChance     = 0.75f;
+    private bool  isRanged       = false;
+    private float preferredRange = 10f;
+    private GameObject projectilePrefab = null;
 
     // ---------------------------------------------------------------
     // Private — base stats (stored after ApplyStats, used by DDA multipliers)
@@ -246,20 +249,51 @@ public class EnemyAI : MonoBehaviour
 
         float dist = Vector3.Distance(transform.position, _player.transform.position);
 
-        if (dist <= attackRange)
-        {
-            SetState(EnemyState.Attack);
-            return;
-        }
-
         if (dist > losePlayerRange)
         {
             SetState(EnemyState.Return);
             return;
         }
 
-        _agent.speed = chaseSpeed;
-        _agent.SetDestination(_player.transform.position);
+        if (isRanged)
+        {
+            // Ranged enemy — enter attack state when within attack range
+            // and reposition to preferred distance
+            if (dist <= attackRange)
+            {
+                SetState(EnemyState.Attack);
+                return;
+            }
+
+            // Move toward preferred range distance
+            if (dist > preferredRange)
+            {
+                // Too far — close in to preferred range
+                _agent.speed = chaseSpeed;
+                _agent.SetDestination(_player.transform.position);
+            }
+            else
+            {
+                // Within preferred range — hold position and face player
+                _agent.SetDestination(transform.position);
+                FaceTarget(_player.transform.position);
+                // Still in range — enter attack
+                SetState(EnemyState.Attack);
+            }
+        }
+        else
+        {
+            // Melee enemy — move directly to player
+            if (dist <= attackRange)
+            {
+                SetState(EnemyState.Attack);
+                return;
+            }
+
+            _agent.speed = chaseSpeed;
+            _agent.SetDestination(_player.transform.position);
+        }
+
         SetAnimatorSpeed(_agent.velocity.magnitude);
     }
 
@@ -277,6 +311,7 @@ public class EnemyAI : MonoBehaviour
 
         float dist = Vector3.Distance(transform.position, _player.transform.position);
 
+        // If player moved out of attack range — chase again
         if (dist > attackRange)
         {
             SetState(EnemyState.Chase);
@@ -284,8 +319,28 @@ public class EnemyAI : MonoBehaviour
         }
 
         FaceTarget(_player.transform.position);
-        _agent.SetDestination(transform.position);
         SetAnimatorSpeed(0f);
+
+        if (isRanged)
+        {
+            // Ranged — hold position at preferred distance
+            if (dist < preferredRange * 0.5f)
+            {
+                // Player too close — back away
+                Vector3 retreatDir = (transform.position - _player.transform.position).normalized;
+                _agent.speed = chaseSpeed;
+                _agent.SetDestination(transform.position + retreatDir * 3f);
+            }
+            else
+            {
+                _agent.SetDestination(transform.position); // Hold
+            }
+        }
+        else
+        {
+            // Melee — stop and attack
+            _agent.SetDestination(transform.position);
+        }
 
         if (_attackTimer <= 0f)
         {
@@ -299,9 +354,41 @@ public class EnemyAI : MonoBehaviour
         if (_animator != null)
             _animator.SetTrigger(AnimAttack);
 
-        _player.TakeDamage(attackDamage);
+        if (isRanged)
+        {
+            // Ranged attack — spawn a projectile the player can dodge
+            Vector3 origin      = transform.position + Vector3.up * 1.0f;
+            Vector3 playerEye   = _player.GetCameraPosition();
+            Vector3 direction   = (playerEye - origin).normalized;
 
-        Debug.Log($"[EnemyAI] {gameObject.name} attacked player for {attackDamage} damage.");
+            if (projectilePrefab != null)
+            {
+                GameObject proj    = Instantiate(projectilePrefab, origin, Quaternion.LookRotation(direction));
+                EnemyProjectile ep = proj.GetComponent<EnemyProjectile>();
+                if (ep != null)
+                    ep.Init(direction, attackDamage, gameObject);
+
+                Debug.Log($"[EnemyAI] {gameObject.name} fired projectile toward player.");
+            }
+            else
+            {
+                // Fallback — instant raycast if no prefab assigned
+                Debug.LogWarning($"[EnemyAI] {gameObject.name} has no projectilePrefab assigned.");
+                if (Physics.Raycast(origin, direction, out RaycastHit hit, attackRange))
+                {
+                    PlayerController pc = hit.collider.GetComponent<PlayerController>() ??
+                                          hit.collider.GetComponentInParent<PlayerController>();
+                    if (pc != null)
+                        pc.TakeDamage(attackDamage);
+                }
+            }
+        }
+        else
+        {
+            // Melee attack — direct damage
+            _player.TakeDamage(attackDamage);
+            Debug.Log($"[EnemyAI] {gameObject.name} melee hit player for {attackDamage}.");
+        }
     }
 
     // ---------------------------------------------------------------
@@ -497,6 +584,9 @@ public class EnemyAI : MonoBehaviour
         attackDamage   = stats.attackDamage;
         attackCooldown = stats.attackCooldown;
         dropChance     = stats.dropChance;
+        isRanged          = stats.isRanged;
+        preferredRange    = stats.preferredRange;
+        projectilePrefab  = stats.projectilePrefab;
 
         _baseHealth         = maxHealth;
         _basePatrolSpeed    = patrolSpeed;
