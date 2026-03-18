@@ -80,3 +80,18 @@ crashlytics-build.properties
 # See .gitattributes for the full LFS configuration.plastic/
 Assets/MASH Virtual/
 Assets/Sci Fi Gun Light/
+# Third party Asset Store packs
+Assets/AddOns/
+Assets/AddOns.meta
+Assets/AmmoBox/
+Assets/AmmoBox.meta
+Assets/MASH Virtual/
+Assets/MASH Virtual.meta
+Assets/Rocks and Boulders 2/
+Assets/Rocks and Boulders 2.meta
+Assets/Sci Fi Gun Light/
+Assets/Sci Fi Gun Light.meta
+Assets/_Recovery/
+Assets/_Recovery.meta
+Assets/SampleScene2.unity
+Assets/SampleScene2.unity.meta
