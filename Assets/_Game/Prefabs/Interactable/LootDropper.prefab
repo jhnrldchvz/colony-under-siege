@@ -45,8 +45,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LootDropper
   lootTable:
-  - prefab: {fileID: 7934125149864072558, guid: 332d24f768902d93787c56acf841f3f2, type: 3}
+  - prefab: {fileID: 9200765588226151406, guid: 1eb2cd712ed918e22adf7f65b0df8a68, type: 3}
     weight: 3
-  - prefab: {fileID: 6430207096002759705, guid: 4a92b9725b6654bf08e8c2fec01e975d, type: 3}
+  - prefab: {fileID: 2987823940855597475, guid: 308b1240dde37544a803317aee629069, type: 3}
     weight: 3
+  - prefab: {fileID: 2987823940855597475, guid: 13ff45988464bcebd839ef443807c9df, type: 3}
+    weight: 2
   nothingWeight: 1
