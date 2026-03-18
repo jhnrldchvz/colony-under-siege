@@ -15,5 +15,5 @@ MonoBehaviour:
   objectiveText: Eliminate all threats
   objectiveId: obj_killall
   type: 0
-  requiredCount: 4
+  requiredCount: 11
   requiredItemId: 

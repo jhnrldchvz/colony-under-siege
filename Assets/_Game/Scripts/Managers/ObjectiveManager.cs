@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -75,10 +76,21 @@ public class ObjectiveManager : MonoBehaviour
         // Subscribe to systems that drive objective progress
         SubscribeToEvents();
 
-        // Initial HUD refresh
-        RefreshHUD();
+        // Delay initial HUD refresh by 2 frames so ALL enemies finish
+        // registering with EnemyManager before we read TotalEnemies
+        StartCoroutine(DelayedHUDRefresh());
 
         Debug.Log($"[ObjectiveManager] Initialized with {stageObjectives.Count} objective(s).");
+    }
+
+    private IEnumerator DelayedHUDRefresh()
+    {
+        yield return null; // frame 1 — enemies call Start() and register
+        yield return null; // frame 2 — safety buffer
+
+        RefreshHUD();
+        Debug.Log($"[ObjectiveManager] HUD refreshed. " +
+                  $"Total enemies: {EnemyManager.Instance?.TotalEnemies ?? 0}");
     }
 
     private void OnDestroy()

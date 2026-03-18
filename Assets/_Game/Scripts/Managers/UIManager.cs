@@ -81,6 +81,16 @@ public class UIManager : MonoBehaviour
     [Tooltip("Crosshair image — hidden during cursor-visible states")]
     public GameObject crosshair;
 
+    [Header("HUD — Key Item")]
+    [Tooltip("Image shown when player has collected the key — hidden by default")]
+    public GameObject keyItemIndicator;
+
+    [Tooltip("Optional icon image inside the key indicator")]
+    public UnityEngine.UI.Image keyItemIcon;
+
+    [Tooltip("Optional text label e.g. 'Access Key'")]
+    public TextMeshProUGUI keyItemText;
+
     // ---------------------------------------------------------------
     // Inspector slots — Pause panel
     // ---------------------------------------------------------------
@@ -201,6 +211,9 @@ public class UIManager : MonoBehaviour
         SetCrosshair(true);
 
         if (pauseOverlay != null) pauseOverlay.SetActive(false);
+
+        // Key indicator hidden by default — shown when key is collected
+        if (keyItemIndicator != null) keyItemIndicator.SetActive(false);
     }
 
     /// <summary>Shows pause panel on top of the HUD.</summary>
@@ -326,6 +339,37 @@ public class UIManager : MonoBehaviour
     {
         if (nextLevelButton != null)
             nextLevelButton.gameObject.SetActive(true);
+    }
+
+    // ---------------------------------------------------------------
+    // Key item indicator
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Shows the key item indicator in the HUD.
+    /// Call this when player collects the key.
+    /// InventoryManager.OnKeyItemAdded triggers this via ObjectiveManager
+    /// or wire it directly from InventoryManager.
+    /// </summary>
+    public void ShowKeyItem(string itemName = "Access Key", Sprite icon = null)
+    {
+        if (keyItemIndicator != null)
+            keyItemIndicator.SetActive(true);
+
+        if (keyItemText != null)
+            keyItemText.text = itemName;
+
+        if (keyItemIcon != null && icon != null)
+            keyItemIcon.sprite = icon;
+
+        Debug.Log($"[UIManager] Key item shown: {itemName}");
+    }
+
+    /// <summary>Hides the key item indicator — call on scene restart.</summary>
+    public void HideKeyItem()
+    {
+        if (keyItemIndicator != null)
+            keyItemIndicator.SetActive(false);
     }
 
     // ---------------------------------------------------------------

@@ -68,6 +68,12 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("Seconds before the enemy GameObject is destroyed after dying")]
     public float destroyDelay = 3f;
 
+    [Tooltip("Explosion or death effect prefab — spawned the moment the enemy dies")]
+    public GameObject deathEffectPrefab;
+
+    [Tooltip("Offset from enemy position where the effect spawns")]
+    public Vector3 deathEffectOffset = new Vector3(0f, 0.5f, 0f);
+
     // ---------------------------------------------------------------
     // Public state — readable by EnemyManager
     // ---------------------------------------------------------------
@@ -505,6 +511,16 @@ public class EnemyAI : MonoBehaviour
             _animator.SetTrigger(AnimDie);
 
         EnemyManager.Instance?.DeregisterEnemy(this);
+
+        // Spawn death effect
+        if (deathEffectPrefab != null)
+        {
+            Vector3    effectPos = transform.position + deathEffectOffset;
+            GameObject effect    = Instantiate(deathEffectPrefab, effectPos, Quaternion.identity);
+
+            // Auto-destroy effect after 3s if it doesn't self-destruct
+            Destroy(effect, 3f);
+        }
 
         Debug.Log($"[EnemyAI] {gameObject.name} died.");
 

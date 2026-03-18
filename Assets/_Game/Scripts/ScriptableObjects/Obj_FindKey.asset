@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5e0f9670d19d376efa60e89c562af73b, type: 3}
-  m_Name: Obj_Kill3
+  m_Name: Obj_FindKey
   m_EditorClassIdentifier: Assembly-CSharp::Objective
-  objectiveText: Eliminate all threats
-  objectiveId: obj_killall
-  type: 1
-  requiredCount: 3
+  objectiveText: Find the Access Key
+  objectiveId: access_key_01
+  type: 2
+  requiredCount: 1
   requiredItemId: 

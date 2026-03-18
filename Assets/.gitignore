@@ -77,4 +77,8 @@ crashlytics-build.properties
 # These are NOT ignored — just a reminder they're LFS-managed
 # ===========================
 # *.png *.jpg *.psd *.fbx *.wav *.mp3 *.ogg etc.
-# See .gitattributes for the full LFS configuration
+# See .gitattributes for the full LFS configuration# Third party Asset Store packs
+Assets/JMO Assets/
+Assets/JMO Assets.meta
+Assets/Sci_fi_Drones/
+Assets/Sci_fi_Drones.meta

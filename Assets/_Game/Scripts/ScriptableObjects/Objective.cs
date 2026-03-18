@@ -112,12 +112,14 @@ public class Objective : ScriptableObject
     public string GetDisplayText()
     {
         if (IsComplete)
-            return $"[DONE] {objectiveText}";
+            return $"✓ {objectiveText}";
 
         switch (type)
         {
             case ObjectiveType.KillCount:
-                return $"{objectiveText}  [{CurrentCount}/{requiredCount}]";
+                int kc = EnemyManager.Instance != null
+                    ? EnemyManager.Instance.KillCount : CurrentCount;
+                return $"• {objectiveText}  [{kc}/{requiredCount}]";
 
             case ObjectiveType.KillAll:
                 int alive = EnemyManager.Instance != null
@@ -125,10 +127,20 @@ public class Objective : ScriptableObject
                 int total = EnemyManager.Instance != null
                     ? EnemyManager.Instance.TotalEnemies : 0;
                 int killed = total - alive;
-                return $"{objectiveText}  [{killed}/{total}]";
+                // Show 0/0 as 0/? until enemies register
+                string countStr = total > 0 ? $"{killed}/{total}" : "0/?";
+                return $"• {objectiveText}  [{countStr}]";
+
+            case ObjectiveType.CollectItem:
+                bool hasItem = InventoryManager.Instance != null &&
+                               InventoryManager.Instance.HasKeyItem(requiredItemId);
+                return $"• {objectiveText}  [{(hasItem ? "1/1" : "0/1")}]";
+
+            case ObjectiveType.ActivateSwitch:
+                return $"• {objectiveText}";
 
             default:
-                return objectiveText;
+                return $"• {objectiveText}";
         }
     }
 }

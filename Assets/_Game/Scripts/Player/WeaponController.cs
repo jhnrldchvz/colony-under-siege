@@ -15,6 +15,10 @@ public class WeaponController : MonoBehaviour
         public string     displayName  = "Rifle";
         public Sprite     icon;
         public GameObject modelObject;  // Drag weapon model here (child of CameraHolder)
+        public Transform  barrelTip;     // Empty GameObject at barrel tip (optional)
+        public Color      muzzleColor   = new Color(1f, 0.85f, 0.4f); // Flash color
+        public float      muzzleIntensity = 8f;                        // Flash brightness
+        public float      muzzleRange    = 3f;                         // Flash radius
         public int        damage       = 5;
         public float   range        = 50f;
         public float   fireRate     = 0.1f;   // Seconds between shots
@@ -327,11 +331,36 @@ public class WeaponController : MonoBehaviour
 
     private void SpawnMuzzleFlash()
     {
-        if (muzzleFlashPrefab == null || cameraHolder == null) return;
+        if (cameraHolder == null) return;
+        StartCoroutine(FlashLight());
+    }
 
-        Vector3    pos   = cameraHolder.position + cameraHolder.forward * 0.5f;
-        GameObject flash = Instantiate(muzzleFlashPrefab, pos, cameraHolder.rotation);
-        Destroy(flash, muzzleFlashDuration);
+    private IEnumerator FlashLight()
+    {
+        // Spawn position — barrel tip if set, otherwise in front of camera
+        Vector3 pos = Current.barrelTip != null
+            ? Current.barrelTip.position
+            : cameraHolder.position + cameraHolder.forward * 0.5f;
+
+        // Create light GameObject
+        GameObject lightObj  = new GameObject("MuzzleFlashLight");
+        lightObj.transform.position = pos;
+
+        Light lt         = lightObj.AddComponent<Light>();
+        lt.type          = LightType.Point;
+        lt.color         = Current.muzzleColor;
+        lt.range         = Current.muzzleRange;
+        lt.shadows       = LightShadows.None;
+
+        // 3-frame brightness fade: full → half → off
+        lt.intensity = Current.muzzleIntensity;
+        yield return null;
+        lt.intensity = Current.muzzleIntensity * 0.4f;
+        yield return null;
+        lt.intensity = 0f;
+        yield return null;
+
+        Destroy(lightObj);
     }
 
     private void SpawnHitEffect(Vector3 position, Vector3 normal)

@@ -275,6 +275,10 @@ public class InventoryManager : MonoBehaviour
             Debug.Log($"[InventoryManager] Key item collected: '{itemId}'. " +
                       $"Total: {_keyItems.Count}");
             OnKeyItemAdded?.Invoke(itemId);
+
+            // Show key indicator in HUD
+            if (UIManager.Instance != null)
+                UIManager.Instance.ShowKeyItem(itemId);
         }
         else
         {
