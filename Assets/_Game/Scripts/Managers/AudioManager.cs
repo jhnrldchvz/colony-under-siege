@@ -1,22 +1,14 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// AudioManager — handles all SFX and music playback.
-///
-/// Responsibilities:
-///   - Maintains an AudioSource pool for SFX (prevents audio cut-off on rapid fire)
-///   - Plays 3D spatial audio for enemy sounds and world events
-///   - Crossfades music between exploration and combat states
-///   - Reacts to GameManager state changes (mute on pause, resume on play)
+/// AudioManager — handles background music with smooth crossfade transitions.
 ///
 /// Setup:
-///   1. Create an empty GameObject named "AudioManager". Attach this script.
-///   2. Set poolSize (8 is enough for most FPS scenarios).
-///   3. Assign explorationMusic and combatMusic AudioClips in the Inspector.
-///   4. Adjust musicVolume and sfxVolume to taste.
-///   5. Call AudioManager.Instance.PlaySFX(clip) from any script.
+///   1. Create an empty GameObject named "AudioManager" in the scene.
+///   2. Attach this script.
+///   3. Drag your music clips into the Inspector slots.
+///   4. AudioManager will auto-play on Start.
 /// </summary>
 public class AudioManager : MonoBehaviour
 {
@@ -36,54 +28,41 @@ public class AudioManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        BuildSFXPool();
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     // ---------------------------------------------------------------
-    // Inspector — Pool
+    // Inspector
     // ---------------------------------------------------------------
 
-    [Header("SFX Pool")]
-    [Tooltip("Number of pooled AudioSources. 8 handles rapid gunfire without cutting out.")]
-    public int poolSize = 8;
-
-    // ---------------------------------------------------------------
-    // Inspector — Volume
-    // ---------------------------------------------------------------
-
-    [Header("Volume")]
-    [Range(0f, 1f)] public float sfxVolume   = 1f;
-    [Range(0f, 1f)] public float musicVolume  = 0.5f;
-
-    // ---------------------------------------------------------------
-    // Inspector — Music
-    // ---------------------------------------------------------------
-
-    [Header("Music")]
-    [Tooltip("Plays during exploration / no active enemies nearby")]
+    [Header("Music Clips")]
+    [Tooltip("Plays during normal exploration")]
     public AudioClip explorationMusic;
 
-    [Tooltip("Plays when the player is in combat (enemy in Chase or Attack state)")]
+    [Tooltip("Plays when enemies are nearby or combat starts")]
     public AudioClip combatMusic;
 
-    [Tooltip("Seconds for a music crossfade to complete")]
-    public float crossfadeDuration = 1.5f;
+    [Header("Settings")]
+    [Range(0f, 1f)]
+    public float masterVolume    = 0.4f;
+
+    [Tooltip("Seconds to crossfade between tracks")]
+    public float crossfadeDuration = 2f;
+
+    [Tooltip("Seconds of silence after detecting no enemies before switching back")]
+    public float combatCooldown  = 5f;
 
     // ---------------------------------------------------------------
-    // Private — SFX pool
+    // Private
     // ---------------------------------------------------------------
 
-    private List<AudioSource> _sfxPool  = new List<AudioSource>();
-    private int               _poolIndex = 0; // Round-robin index
+    private AudioSource _sourceA;
+    private AudioSource _sourceB;
+    private AudioSource _activeSouce;
 
-    // ---------------------------------------------------------------
-    // Private — Music
-    // ---------------------------------------------------------------
-
-    private AudioSource _musicSourceA; // Active music layer
-    private AudioSource _musicSourceB; // Crossfade target layer
-    private Coroutine   _crossfadeRoutine;
+    private bool   _inCombat        = false;
+    private float  _combatTimer     = 0f;
+    private bool   _crossfading     = false;
 
     // ---------------------------------------------------------------
     // Lifecycle
@@ -91,235 +70,241 @@ public class AudioManager : MonoBehaviour
 
     private void Start()
     {
-        BuildMusicSources();
+        // Create two audio sources — only once
+        if (_sourceA == null)
+        {
+            _sourceA = gameObject.AddComponent<AudioSource>();
+            _sourceB = gameObject.AddComponent<AudioSource>();
 
-        // Subscribe to GameManager state changes
-        if (GameManager.Instance != null)
-            GameManager.Instance.OnStateChanged += HandleStateChanged;
+            foreach (AudioSource src in new[] { _sourceA, _sourceB })
+            {
+                src.loop         = true;
+                src.playOnAwake  = false;
+                src.volume       = 0f;
+                src.spatialBlend = 0f;
+            }
 
-        // Start with exploration music
-        PlayMusic(explorationMusic, fadein: false);
+            _activeSouce = _sourceA;
+        }
 
-        Debug.Log("[AudioManager] Initialized.");
+        HandleSceneMusic(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
+        EnsureSingleAudioListener();
+    }
+
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene,
+                               UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        _inCombat    = false;
+        _combatTimer = 0f;
+        StopAllCoroutines();
+        _crossfading = false;
+        HandleSceneMusic(scene.buildIndex);
+        EnsureSingleAudioListener();
+    }
+
+    /// <summary>
+    /// Guarantees exactly one AudioListener is active in the scene.
+    /// Keeps the listener on the MainCamera-tagged camera (the player's FPS
+    /// camera in a game scene, or the menu camera). Disables all others.
+    /// </summary>
+    private void EnsureSingleAudioListener()
+    {
+        AudioListener[] listeners = FindObjectsByType<AudioListener>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        if (listeners.Length <= 1) return;
+
+        // Prefer the listener whose GameObject has the MainCamera tag
+        AudioListener preferred = null;
+        foreach (AudioListener al in listeners)
+        {
+            if (al.gameObject.CompareTag("MainCamera"))
+            {
+                preferred = al;
+                break;
+            }
+        }
+
+        // Fall back to the first enabled one
+        if (preferred == null)
+        {
+            foreach (AudioListener al in listeners)
+            {
+                if (al.enabled) { preferred = al; break; }
+            }
+        }
+
+        // Disable every listener that isn't the chosen one
+        foreach (AudioListener al in listeners)
+        {
+            bool keep = al == preferred;
+            if (al.enabled != keep)
+            {
+                al.enabled = keep;
+                Debug.Log(keep
+                    ? $"[AudioManager] Kept AudioListener on '{al.gameObject.name}'"
+                    : $"[AudioManager] Disabled duplicate AudioListener on '{al.gameObject.name}'");
+            }
+        }
+    }
+
+    private void HandleSceneMusic(int sceneIndex)
+    {
+        StopAllMusicImmediate();
+
+        // Main menu — stay silent
+        if (sceneIndex == 0) return;
+
+        // Game scene — start exploration music
+        if (explorationMusic != null)
+            PlayImmediate(explorationMusic);
+    }
+
+    private void StopAllMusicImmediate()
+    {
+        if (_sourceA != null) { _sourceA.Stop(); _sourceA.volume = 0f; _sourceA.clip = null; }
+        if (_sourceB != null) { _sourceB.Stop(); _sourceB.volume = 0f; _sourceB.clip = null; }
+        if (_sourceA != null) _activeSouce = _sourceA;
+    }
+
+    private void Update()
+    {
+        // No music logic on the main menu
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex == 0) return;
+
+        if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
+
+        // Auto-detect combat based on EnemyManager
+        bool enemiesNearby = EnemyManager.Instance != null &&
+                             EnemyManager.Instance.AliveCount > 0;
+
+        if (enemiesNearby)
+        {
+            _combatTimer = combatCooldown;
+
+            if (!_inCombat)
+            {
+                _inCombat = true;
+                PlayCombatMusic();
+            }
+        }
+        else if (_inCombat)
+        {
+            _combatTimer -= Time.deltaTime;
+
+            if (_combatTimer <= 0f)
+            {
+                _inCombat = false;
+                PlayExplorationMusic();
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Public API
+    // ---------------------------------------------------------------
+
+    public void PlayExplorationMusic()
+    {
+        if (explorationMusic != null && !IsPlaying(explorationMusic))
+            CrossfadeTo(explorationMusic);
+    }
+
+    public void PlayCombatMusic()
+    {
+        if (combatMusic != null && !IsPlaying(combatMusic))
+            CrossfadeTo(combatMusic);
+    }
+
+    public void SetVolume(float volume)
+    {
+        masterVolume = Mathf.Clamp01(volume);
+        if (!_crossfading && _activeSouce != null)
+            _activeSouce.volume = masterVolume;
+    }
+
+    public void StopMusic(float fadeDuration = 1f)
+    {
+        StartCoroutine(FadeOut(_activeSouce, fadeDuration));
+    }
+
+    // ---------------------------------------------------------------
+    // Private helpers
+    // ---------------------------------------------------------------
+
+    private void PlayImmediate(AudioClip clip)
+    {
+        _activeSouce.clip   = clip;
+        _activeSouce.volume = masterVolume;
+        _activeSouce.Play();
+    }
+
+    private bool IsPlaying(AudioClip clip)
+    {
+        return (_activeSouce.clip == clip && _activeSouce.isPlaying);
+    }
+
+    private void CrossfadeTo(AudioClip newClip)
+    {
+        if (_crossfading) return;
+        StartCoroutine(CrossfadeCoroutine(newClip));
+    }
+
+    private IEnumerator CrossfadeCoroutine(AudioClip newClip)
+    {
+        _crossfading = true;
+
+        // Inactive source plays new clip at volume 0
+        AudioSource incoming = (_activeSouce == _sourceA) ? _sourceB : _sourceA;
+        AudioSource outgoing = _activeSouce;
+
+        incoming.clip   = newClip;
+        incoming.volume = 0f;
+        incoming.Play();
+
+        float timer = 0f;
+
+        while (timer < crossfadeDuration)
+        {
+            timer += Time.deltaTime;
+            float t = timer / crossfadeDuration;
+
+            incoming.volume = Mathf.Lerp(0f, masterVolume, t);
+            outgoing.volume = Mathf.Lerp(masterVolume, 0f, t);
+
+            yield return null;
+        }
+
+        outgoing.Stop();
+        outgoing.volume = 0f;
+        incoming.volume = masterVolume;
+
+        _activeSouce = incoming;
+        _crossfading = false;
+
+        Debug.Log($"[AudioManager] Now playing: {newClip.name}");
+    }
+
+    private IEnumerator FadeOut(AudioSource source, float duration)
+    {
+        float startVolume = source.volume;
+        float timer = 0f;
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            source.volume = Mathf.Lerp(startVolume, 0f, timer / duration);
+            yield return null;
+        }
+
+        source.Stop();
+        source.volume = 0f;
     }
 
     private void OnDestroy()
     {
-        if (GameManager.Instance != null)
-            GameManager.Instance.OnStateChanged -= HandleStateChanged;
-
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
         if (Instance == this) Instance = null;
-    }
-
-    // ---------------------------------------------------------------
-    // Pool construction
-    // ---------------------------------------------------------------
-
-    private void BuildSFXPool()
-    {
-        for (int i = 0; i < poolSize; i++)
-        {
-            AudioSource src = gameObject.AddComponent<AudioSource>();
-            src.playOnAwake = false;
-            src.spatialBlend = 0f; // 2D by default — overridden in PlaySpatial
-            _sfxPool.Add(src);
-        }
-    }
-
-    private void BuildMusicSources()
-    {
-        _musicSourceA = gameObject.AddComponent<AudioSource>();
-        _musicSourceB = gameObject.AddComponent<AudioSource>();
-
-        foreach (AudioSource src in new[] { _musicSourceA, _musicSourceB })
-        {
-            src.loop        = true;
-            src.playOnAwake = false;
-            src.spatialBlend = 0f; // Music is always 2D
-            src.volume      = 0f;
-        }
-    }
-
-    // ---------------------------------------------------------------
-    // SFX — 2D (UI clicks, pickups, player sounds)
-    // ---------------------------------------------------------------
-
-    /// <summary>
-    /// Plays a 2D sound effect from the pool.
-    /// Safe to call every frame — pool prevents audio source exhaustion.
-    /// </summary>
-    public void PlaySFX(AudioClip clip)
-    {
-        if (clip == null) return;
-
-        AudioSource src = GetNextPooledSource();
-        src.spatialBlend = 0f;
-        src.volume       = sfxVolume;
-        src.clip         = clip;
-        src.Play();
-    }
-
-    /// <summary>
-    /// Plays a 3D spatial sound at a world position.
-    /// Use for enemy footsteps, gunshots, explosions — anything with a location.
-    /// </summary>
-    public void PlaySpatial(AudioClip clip, Vector3 position, float volume = 1f)
-    {
-        if (clip == null) return;
-
-        // AudioSource.PlayClipAtPoint is simpler but creates a new GameObject each call.
-        // Using the pool + a quick position trick instead:
-        AudioSource src = GetNextPooledSource();
-        src.transform.position = position;
-        src.spatialBlend       = 1f;   // Full 3D
-        src.rolloffMode        = AudioRolloffMode.Linear;
-        src.maxDistance        = 30f;
-        src.volume             = sfxVolume * volume;
-        src.clip               = clip;
-        src.Play();
-    }
-
-    // ---------------------------------------------------------------
-    // Music
-    // ---------------------------------------------------------------
-
-    /// <summary>
-    /// Switches to a music clip with an optional crossfade.
-    /// Called internally and by EnemyManager when combat starts/ends.
-    /// </summary>
-    public void PlayMusic(AudioClip clip, bool fadein = true)
-    {
-        if (clip == null) return;
-
-        // Already playing this clip — skip
-        if (_musicSourceA.clip == clip && _musicSourceA.isPlaying) return;
-
-        if (_crossfadeRoutine != null)
-            StopCoroutine(_crossfadeRoutine);
-
-        if (fadein)
-            _crossfadeRoutine = StartCoroutine(CrossfadeTo(clip));
-        else
-        {
-            _musicSourceA.clip   = clip;
-            _musicSourceA.volume = musicVolume;
-            _musicSourceA.Play();
-        }
-    }
-
-    /// <summary>Switch to combat music — call when an enemy enters Chase state.</summary>
-    public void SwitchToCombatMusic()
-    {
-        PlayMusic(combatMusic);
-    }
-
-    /// <summary>Switch back to exploration music — call when all enemies return to Patrol.</summary>
-    public void SwitchToExplorationMusic()
-    {
-        PlayMusic(explorationMusic);
-    }
-
-    // ---------------------------------------------------------------
-    // Crossfade coroutine
-    // ---------------------------------------------------------------
-
-    private IEnumerator CrossfadeTo(AudioClip newClip)
-    {
-        // Set up the incoming layer (B)
-        _musicSourceB.clip   = newClip;
-        _musicSourceB.volume = 0f;
-        _musicSourceB.Play();
-
-        float elapsed  = 0f;
-        float startVol = _musicSourceA.volume;
-
-        while (elapsed < crossfadeDuration)
-        {
-            elapsed += Time.unscaledDeltaTime; // Unscaled — works during pause
-            float t  = elapsed / crossfadeDuration;
-
-            _musicSourceA.volume = Mathf.Lerp(startVol,   0f,           t);
-            _musicSourceB.volume = Mathf.Lerp(0f,         musicVolume,  t);
-
-            yield return null;
-        }
-
-        // Swap A and B so A is always the active layer
-        _musicSourceA.Stop();
-        (_musicSourceA, _musicSourceB) = (_musicSourceB, _musicSourceA);
-
-        _crossfadeRoutine = null;
-    }
-
-    // ---------------------------------------------------------------
-    // State handler — pause/resume audio
-    // ---------------------------------------------------------------
-
-    private void HandleStateChanged(GameManager.GameState state)
-    {
-        switch (state)
-        {
-            case GameManager.GameState.Paused:
-                // Lower music during pause — don't mute entirely
-                _musicSourceA.volume = musicVolume * 0.3f;
-                break;
-
-            case GameManager.GameState.Playing:
-                _musicSourceA.volume = musicVolume;
-                break;
-
-            case GameManager.GameState.GameOver:
-            case GameManager.GameState.Win:
-                // Fade out music on end-states
-                if (_crossfadeRoutine != null) StopCoroutine(_crossfadeRoutine);
-                StartCoroutine(FadeOutMusic());
-                break;
-        }
-    }
-
-    private IEnumerator FadeOutMusic()
-    {
-        float startVol = _musicSourceA.volume;
-        float elapsed  = 0f;
-        float duration = 1.5f;
-
-        while (elapsed < duration)
-        {
-            elapsed              += Time.unscaledDeltaTime;
-            _musicSourceA.volume  = Mathf.Lerp(startVol, 0f, elapsed / duration);
-            yield return null;
-        }
-
-        _musicSourceA.Stop();
-    }
-
-    // ---------------------------------------------------------------
-    // Volume control — exposed for a settings menu later
-    // ---------------------------------------------------------------
-
-    public void SetSFXVolume(float vol)
-    {
-        sfxVolume = Mathf.Clamp01(vol);
-    }
-
-    public void SetMusicVolume(float vol)
-    {
-        musicVolume            = Mathf.Clamp01(vol);
-        _musicSourceA.volume   = musicVolume;
-    }
-
-    // ---------------------------------------------------------------
-    // Pool utility
-    // ---------------------------------------------------------------
-
-    /// <summary>
-    /// Returns the next available AudioSource from the pool (round-robin).
-    /// If all sources are busy the oldest one is reused — acceptable for SFX.
-    /// </summary>
-    private AudioSource GetNextPooledSource()
-    {
-        AudioSource src = _sfxPool[_poolIndex];
-        _poolIndex = (_poolIndex + 1) % _sfxPool.Count;
-        return src;
     }
 }

@@ -16,4 +16,4 @@ MonoBehaviour:
   objectiveId: access_key_01
   type: 2
   requiredCount: 1
-  requiredItemId: 
+  requiredItemId: access_key_01

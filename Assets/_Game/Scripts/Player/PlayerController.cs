@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
@@ -23,6 +24,12 @@ public class PlayerController : MonoBehaviour
     public float     interactRange     = 3.5f;
     public LayerMask interactableLayer;
     public KeyCode   interactKey       = KeyCode.E;
+
+    [Header("NavMesh Boundary")]
+    [Tooltip("Clamp player movement to NavMesh surface")]
+    public bool  clampToNavMesh    = true;
+    [Tooltip("How far to sample NavMesh from player position")]
+    public float navMeshSampleRange = 2f;
 
     public int  CurrentHealth { get; private set; }
     public bool IsAlive       { get; private set; } = true;
@@ -79,7 +86,29 @@ public class PlayerController : MonoBehaviour
         }
 
         _velocity.y += Physics.gravity.y * gravityMultiplier * Time.deltaTime;
-        _cc.Move((move + Vector3.up * _velocity.y) * Time.deltaTime);
+
+        // Calculate where the player would move to
+        Vector3 nextPos = transform.position + (move + Vector3.up * _velocity.y) * Time.deltaTime;
+
+        // Clamp to NavMesh — block movement if next position is off NavMesh
+        if (clampToNavMesh && move.magnitude > 0f)
+        {
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(nextPos, out hit, navMeshSampleRange, NavMesh.AllAreas))
+            {
+                // Next position is on NavMesh — allow movement
+                _cc.Move((move + Vector3.up * _velocity.y) * Time.deltaTime);
+            }
+            else
+            {
+                // Next position is off NavMesh — block horizontal movement, keep gravity
+                _cc.Move(Vector3.up * _velocity.y * Time.deltaTime);
+            }
+        }
+        else
+        {
+            _cc.Move((move + Vector3.up * _velocity.y) * Time.deltaTime);
+        }
     }
 
     private void HandleLook()

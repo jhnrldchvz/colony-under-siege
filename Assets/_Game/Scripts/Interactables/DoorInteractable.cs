@@ -24,8 +24,12 @@ public class DoorInteractable : MonoBehaviour, IInteractable
     [Tooltip("Must match the itemId on your ObjectivePickup")]
     public string requiredKeyId      = "access_key_01";
 
+    [Header("Objectives")]
+    [Tooltip("If true, all objectives must be complete before door can be opened")]
+    public bool requireAllObjectives = true;
+
     [Header("Scene")]
-    [Tooltip("Build index of scene to load when door opens. -1 = use LevelManager")]
+    [Tooltip("Build index of scene to load when door opens. -1 = trigger win screen")]
     public int nextSceneBuildIndex   = -1;
 
     [Header("Proximity Label")]
@@ -35,8 +39,9 @@ public class DoorInteractable : MonoBehaviour, IInteractable
     public float             fadeSpeed   = 8f;
 
     [Header("Messages")]
-    public string unlockedMessage    = "[E] Enter";
-    public string lockedMessage      = "Access Key Required";
+    public string unlockedMessage        = "[E] Enter";
+    public string lockedMessage          = "Access Key Required";
+    public string objectivesNotComplete  = "Complete all objectives first";
 
     [Header("Quick Outline")]
     public Outline outline;
@@ -75,12 +80,21 @@ public class DoorInteractable : MonoBehaviour, IInteractable
         // Outline
         if (outline != null) outline.enabled = _playerNearby;
 
-        // Update label text based on whether player has key
+        // Update label text based on key and objective state
         if (_playerNearby && labelText != null)
         {
-            bool hasKey = InventoryManager.Instance != null &&
-                          InventoryManager.Instance.HasKeyItem(requiredKeyId);
-            labelText.text = hasKey ? unlockedMessage : lockedMessage;
+            bool hasKey    = InventoryManager.Instance != null &&
+                             InventoryManager.Instance.HasKeyItem(requiredKeyId);
+            bool objsDone  = !requireAllObjectives ||
+                             (ObjectiveManager.Instance != null &&
+                              ObjectiveManager.Instance.AreAllComplete());
+
+            if (!hasKey)
+                labelText.text = lockedMessage;
+            else if (!objsDone)
+                labelText.text = objectivesNotComplete;
+            else
+                labelText.text = unlockedMessage;
         }
 
         // Fade label
@@ -108,34 +122,44 @@ public class DoorInteractable : MonoBehaviour, IInteractable
 
     public void Interact(PlayerController player)
     {
-        bool hasKey = InventoryManager.Instance != null &&
-                      InventoryManager.Instance.HasKeyItem(requiredKeyId);
+        bool hasKey   = InventoryManager.Instance != null &&
+                        InventoryManager.Instance.HasKeyItem(requiredKeyId);
+        bool objsDone = !requireAllObjectives ||
+                        (ObjectiveManager.Instance != null &&
+                         ObjectiveManager.Instance.AreAllComplete());
 
         if (!hasKey)
         {
             Debug.Log($"[Door] Locked — need key: '{requiredKeyId}'");
-
-            // Flash label red briefly to indicate locked
             StartCoroutine(FlashLocked());
             return;
         }
 
-        Debug.Log("[Door] Unlocked! Opening...");
+        if (!objsDone)
+        {
+            Debug.Log("[Door] Objectives not complete yet.");
+            StartCoroutine(FlashLocked());
+            return;
+        }
+
+        Debug.Log("[Door] All objectives done + key found. Stage complete!");
         OpenDoor();
     }
 
     private void OpenDoor()
     {
-        // Load next scene
+        // Trigger win screen — door is the win condition
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.TriggerStageWin();
+            return;
+        }
+
+        // Fallback — load next scene directly
         if (nextSceneBuildIndex >= 0)
-        {
             GameManager.Instance?.LoadScene(nextSceneBuildIndex);
-        }
         else
-        {
-            // Fall back to LevelManager
             LevelManager.Instance?.LoadNextLevel();
-        }
     }
 
     private System.Collections.IEnumerator FlashLocked()

@@ -1,0 +1,19 @@
+1. Track new folders in the local repo file system:
+> git status --short | grep "^?" | grep "Assets/" | cut -d"/" -f1-2 | sort -u
+
+2. Also check untracked new folders:
+> git status --short | grep "^?" | grep "Assets/" | cut -d"/" -f1-2 | sort -u
+
+3. Add them to .gitignore
+> cd "/mnt/hdd/Work/Projects/Unity/3D Sci-Fi FPS"
+> cat >> .gitignore << 'EOF'
+> Assets/[New Asset Folder]/
+  Assets/[New Asset Folder].meta
+  EOF
+  
+> git add .gitignore
+> git commit -m "Gitignore [New Asset] pack"
+> git push
+
+4. Git status to verify
+> git status

@@ -231,13 +231,12 @@ public class ObjectiveManager : MonoBehaviour
 
         _allComplete = true;
 
-        Debug.Log("[ObjectiveManager] All objectives complete!");
+        Debug.Log("[ObjectiveManager] All objectives complete! Enter the door to proceed.");
 
         OnAllObjectivesComplete?.Invoke();
 
-        // Tell GameManager the stage is won
-        if (GameManager.Instance != null)
-            GameManager.Instance.TriggerStageWin();
+        // HUD hint — tell player to go to the door
+        RefreshHUD();
     }
 
     // ---------------------------------------------------------------

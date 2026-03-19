@@ -531,8 +531,8 @@ MonoBehaviour:
   statPreset: {fileID: 11400000, guid: 2932e7757916cebf9bacd8ac42dcc95d, type: 2}
   lootDropPrefab: {fileID: 7030141120286086437, guid: 82ce46e867ea7a917a26834bfd302d28, type: 3}
   destroyDelay: 0
-  deathEffectPrefab: {fileID: 100008, guid: 1ae4db7b36e51124b89d2b32303a7a0b, type: 3}
-  deathEffectOffset: {x: 0, y: 0.5, z: 0}
+  deathEffectPrefab: {fileID: 100006, guid: 2e7e92bc7175b744ea40878dedfa79e4, type: 3}
+  deathEffectOffset: {x: 0, y: 1, z: 0}
 --- !u!136 &5196722130685187214
 CapsuleCollider:
   m_ObjectHideFlags: 0
