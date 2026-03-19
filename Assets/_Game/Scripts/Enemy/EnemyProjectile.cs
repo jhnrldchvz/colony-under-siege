@@ -63,13 +63,14 @@ public class EnemyProjectile : MonoBehaviour
         // Ignore triggers (pickups, canvases, etc.)
         if (other.isTrigger)                                    return;
 
-        // Hit player
-        PlayerController player = other.GetComponent<PlayerController>() ??
-                                  other.GetComponentInParent<PlayerController>();
-        if (player != null && player.IsAlive)
+        // IDamageable — hits player or any other damageable target
+        IDamageable target = other.GetComponent<IDamageable>() ??
+                             other.GetComponentInParent<IDamageable>();
+
+        if (target != null && target.IsAlive)
         {
-            player.TakeDamage(damage);
-            Debug.Log($"[EnemyProjectile] Hit player for {damage} damage.");
+            target.TakeDamage(damage);
+            Debug.Log($"[EnemyProjectile] Hit '{other.gameObject.name}' for {damage} damage.");
             Destroy(gameObject);
             return;
         }

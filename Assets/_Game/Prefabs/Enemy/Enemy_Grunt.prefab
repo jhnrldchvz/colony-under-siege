@@ -273,6 +273,7 @@ GameObject:
   - component: {fileID: 7006434456720137249}
   - component: {fileID: 8735029274661893084}
   - component: {fileID: 7277852700846933421}
+  - component: {fileID: 8568687974438569328}
   m_Layer: 0
   m_Name: Body_Back
   m_TagString: Untagged
@@ -374,6 +375,19 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300000, guid: 7ef5a93e089a2b841891487c5d6e5d28, type: 3}
+--- !u!114 &8568687974438569328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1574764737103533017}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &4626879440845601631
 GameObject:
   m_ObjectHideFlags: 0
@@ -461,6 +475,7 @@ GameObject:
   - component: {fileID: 6664533457398028602}
   - component: {fileID: 191695699031139978}
   - component: {fileID: 5196722130685187214}
+  - component: {fileID: 1431528151746525750}
   m_Layer: 0
   m_Name: Enemy_Grunt
   m_TagString: Untagged
@@ -556,6 +571,19 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1431528151746525750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5410640720642477398}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &6437038052046050646
 GameObject:
   m_ObjectHideFlags: 0
@@ -569,6 +597,7 @@ GameObject:
   - component: {fileID: 6571784941966260769}
   - component: {fileID: 8462116942422202751}
   - component: {fileID: 2795250983331608319}
+  - component: {fileID: 7006725953773786729}
   m_Layer: 7
   m_Name: NameCanvas
   m_TagString: Untagged
@@ -674,6 +703,19 @@ MonoBehaviour:
   labelText: {fileID: 9144306934863392591}
   showRange: 15
   fadeSpeed: 8
+--- !u!114 &7006725953773786729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6437038052046050646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &7723457138069955942
 GameObject:
   m_ObjectHideFlags: 0
@@ -761,6 +803,7 @@ GameObject:
   - component: {fileID: 7677298725687966274}
   - component: {fileID: 3557892071855169027}
   - component: {fileID: 1717915612302481719}
+  - component: {fileID: 832547965039035253}
   m_Layer: 0
   m_Name: Body_Front
   m_TagString: Untagged
@@ -862,3 +905,16 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300002, guid: 7ef5a93e089a2b841891487c5d6e5d28, type: 3}
+--- !u!114 &832547965039035253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8099684934938936203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}

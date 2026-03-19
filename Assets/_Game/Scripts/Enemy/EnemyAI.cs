@@ -22,7 +22,7 @@ using UnityEngine.AI;
 ///   5. Assign an EnemyStats preset — all combat/movement stats come from there.
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
-public class EnemyAI : MonoBehaviour
+public class EnemyAI : MonoBehaviour, IDamageable
 {
     // ---------------------------------------------------------------
     // State enum
@@ -171,6 +171,7 @@ public class EnemyAI : MonoBehaviour
             Debug.LogWarning("[EnemyAI] Could not find Player.");
 
         EnemyManager.Instance?.RegisterEnemy(this);
+        InitFlash();
 
         if (DifficultyManager.Instance != null)
             ApplyDifficultySettings(
@@ -488,11 +489,49 @@ public class EnemyAI : MonoBehaviour
 
         healthBar?.UpdateHealth(_currentHealth, maxHealth);
 
+        // Flash red on hit
+        StartCoroutine(FlashHit());
+
         if (CurrentState == EnemyState.Patrol || CurrentState == EnemyState.Return)
             SetState(EnemyState.Chase);
 
         if (_currentHealth <= 0)
             Die();
+    }
+
+    // ---------------------------------------------------------------
+    // Hit Flash
+    // ---------------------------------------------------------------
+
+    private Renderer[] _renderers;
+    private Color[]    _baseColors;
+    private bool       _flashReady = false;
+
+    private void InitFlash()
+    {
+        _renderers = GetComponentsInChildren<Renderer>();
+        _baseColors = new Color[_renderers.Length];
+        for (int i = 0; i < _renderers.Length; i++)
+        {
+            if (_renderers[i].material != null)
+                _baseColors[i] = _renderers[i].material.color;
+        }
+        _flashReady = true;
+    }
+
+    private System.Collections.IEnumerator FlashHit()
+    {
+        if (!_flashReady) yield break;
+
+        for (int i = 0; i < _renderers.Length; i++)
+            if (_renderers[i] != null && _renderers[i].material != null)
+                _renderers[i].material.color = Color.red;
+
+        yield return new WaitForSeconds(0.08f);
+
+        for (int i = 0; i < _renderers.Length; i++)
+            if (_renderers[i] != null && _renderers[i].material != null)
+                _renderers[i].material.color = _baseColors[i];
     }
 
     // ---------------------------------------------------------------

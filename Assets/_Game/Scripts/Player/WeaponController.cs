@@ -201,27 +201,31 @@ public class WeaponController : MonoBehaviour
     {
         if (cameraHolder == null) return;
 
-        Vector3 origin    = cameraHolder.position;
-        Vector3 direction = cameraHolder.forward;
+        // Fire ray from exact screen center — guarantees crosshair alignment
+        Camera cam = Camera.main;
+        Ray ray = cam != null
+            ? cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f))
+            : new Ray(cameraHolder.position, cameraHolder.forward);
 
-        Debug.DrawRay(origin, direction * Current.range, Color.red, 1f);
+        Debug.DrawRay(ray.origin, ray.direction * Current.range, Color.red, 1f);
 
         bool hitEnemy = false;
 
-        if (Physics.Raycast(origin, direction, out RaycastHit hit, Current.range))
+        if (Physics.Raycast(ray, out RaycastHit hit, Current.range))
         {
             Debug.Log($"[WeaponController] Hit: {hit.collider.gameObject.name}");
 
-            EnemyAI enemy = hit.collider.GetComponent<EnemyAI>() ??
-                            hit.collider.GetComponentInParent<EnemyAI>();
+            // IDamageable — works on enemies, crates, bosses, anything
+            IDamageable target = hit.collider.GetComponent<IDamageable>() ??
+                                 hit.collider.GetComponentInParent<IDamageable>();
 
-            if (enemy != null && enemy.IsAlive)
+            if (target != null && target.IsAlive)
             {
-                enemy.TakeDamage(Current.damage);
+                target.TakeDamage(Current.damage);
                 SpawnHitEffect(hit.point, hit.normal);
                 hitEnemy = true;
-                Debug.Log($"[WeaponController] {Current.displayName} hit: {enemy.gameObject.name} " +
-                          $"for {Current.damage} dmg.");
+                Debug.Log($"[WeaponController] {Current.displayName} hit: " +
+                          $"{hit.collider.gameObject.name} for {Current.damage} dmg.");
             }
         }
 
