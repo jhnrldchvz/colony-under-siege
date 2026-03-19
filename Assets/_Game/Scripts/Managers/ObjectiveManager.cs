@@ -56,10 +56,11 @@ public class ObjectiveManager : MonoBehaviour
     public event Action OnAllObjectivesComplete;
 
     // ---------------------------------------------------------------
-    // Private
+    // Private — runtime wrappers (one per Objective SO, per session)
     // ---------------------------------------------------------------
 
-    private bool _allComplete = false;
+    private List<ObjectiveRuntime> _runtimes    = new List<ObjectiveRuntime>();
+    private bool                   _allComplete = false;
 
     // ---------------------------------------------------------------
     // Lifecycle
@@ -67,10 +68,12 @@ public class ObjectiveManager : MonoBehaviour
 
     private void Start()
     {
-        // Reset all objective runtime state from any previous session
+        // Build fresh runtime wrappers — SO assets are never mutated
+        _runtimes.Clear();
         foreach (Objective obj in stageObjectives)
         {
-            if (obj != null) obj.ResetRuntime();
+            if (obj != null)
+                _runtimes.Add(new ObjectiveRuntime(obj));
         }
 
         // Subscribe to systems that drive objective progress
@@ -161,14 +164,13 @@ public class ObjectiveManager : MonoBehaviour
     /// </summary>
     public void NotifySwitchActivated(string switchId)
     {
-        foreach (Objective obj in stageObjectives)
+        foreach (ObjectiveRuntime rt in _runtimes)
         {
-            if (obj == null || obj.IsComplete) continue;
-
-            if (obj.type == Objective.ObjectiveType.ActivateSwitch &&
-                obj.requiredItemId == switchId)
+            if (rt.IsComplete) continue;
+            if (rt.Data.type == Objective.ObjectiveType.ActivateSwitch &&
+                rt.Data.requiredItemId == switchId)
             {
-                obj.IsComplete = true;
+                rt.IsComplete = true;
                 Debug.Log($"[ObjectiveManager] Switch objective complete: '{switchId}'");
             }
         }
@@ -184,20 +186,19 @@ public class ObjectiveManager : MonoBehaviour
     /// <summary>Evaluates all objectives of a specific type.</summary>
     private void EvaluateObjectivesOfType(Objective.ObjectiveType type)
     {
-        foreach (Objective obj in stageObjectives)
+        foreach (ObjectiveRuntime rt in _runtimes)
         {
-            if (obj == null || obj.IsComplete) continue;
-            if (obj.type == type) obj.Evaluate();
+            if (rt.IsComplete) continue;
+            if (rt.Data.type == type) rt.Evaluate();
         }
     }
 
     /// <summary>Evaluates all objectives regardless of type.</summary>
     public void EvaluateAll()
     {
-        foreach (Objective obj in stageObjectives)
+        foreach (ObjectiveRuntime rt in _runtimes)
         {
-            if (obj != null && !obj.IsComplete)
-                obj.Evaluate();
+            if (!rt.IsComplete) rt.Evaluate();
         }
 
         RefreshHUD();
@@ -209,14 +210,9 @@ public class ObjectiveManager : MonoBehaviour
     /// </summary>
     public bool AreAllComplete()
     {
-        if (stageObjectives.Count == 0) return false;
-
-        foreach (Objective obj in stageObjectives)
-        {
-            if (obj == null) continue;
-            if (!obj.IsComplete) return false;
-        }
-
+        if (_runtimes.Count == 0) return false;
+        foreach (ObjectiveRuntime rt in _runtimes)
+            if (!rt.IsComplete) return false;
         return true;
     }
 
@@ -253,11 +249,8 @@ public class ObjectiveManager : MonoBehaviour
 
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
 
-        foreach (Objective obj in stageObjectives)
-        {
-            if (obj == null) continue;
-            sb.AppendLine(obj.GetDisplayText());
-        }
+        foreach (ObjectiveRuntime rt in _runtimes)
+            sb.AppendLine(rt.GetDisplayText());
 
         UIManager.Instance.UpdateObjectiveText(sb.ToString().TrimEnd());
     }
