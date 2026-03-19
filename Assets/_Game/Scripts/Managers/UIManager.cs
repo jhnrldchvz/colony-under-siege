@@ -143,8 +143,22 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[UIManager] GameManager.Instance not found. " +
-                             "Make sure GameManager is in the scene.");
+            Debug.LogWarning("[UIManager] GameManager.Instance not found.");
+        }
+
+        // Subscribe to InventoryManager events — UIManager reacts, nothing calls it directly
+        if (InventoryManager.Instance != null)
+        {
+            InventoryManager.Instance.OnAmmoChanged  += OnAmmoChanged;
+            InventoryManager.Instance.OnKeyItemAdded += OnKeyItemCollected;
+        }
+
+        // Subscribe to PlayerController health event
+        PlayerController pc = FindObjectOfType<PlayerController>();
+        if (pc != null)
+        {
+            pc.OnHealthChanged   += UpdateHealth;
+            pc.OnMaxHealthSet    += SetMaxHealth;
         }
 
         // Wire buttons in code — no Inspector OnClick() needed
@@ -161,12 +175,17 @@ public class UIManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        // Always unsubscribe to avoid memory leaks after scene reload
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnStateChanged -= HandleStateChanged;
             GameManager.Instance.OnGameOver     -= ShowGameOverScreen;
             GameManager.Instance.OnStageWin     -= ShowWinScreen;
+        }
+
+        if (InventoryManager.Instance != null)
+        {
+            InventoryManager.Instance.OnAmmoChanged  -= OnAmmoChanged;
+            InventoryManager.Instance.OnKeyItemAdded -= OnKeyItemCollected;
         }
     }
 
@@ -268,7 +287,23 @@ public class UIManager : MonoBehaviour
     }
 
     // ---------------------------------------------------------------
-    // HUD update methods — called by PlayerController & InventoryManager
+    // Private event handlers — UIManager listens, nothing calls it directly
+    // ---------------------------------------------------------------
+
+    /// <summary>Fires when InventoryManager.OnAmmoChanged fires.</summary>
+    private void OnAmmoChanged(InventoryManager.WeaponType type, int current, int reserve)
+    {
+        UpdateAmmo(current, reserve);
+    }
+
+    /// <summary>Fires when InventoryManager.OnKeyItemAdded fires.</summary>
+    private void OnKeyItemCollected(string itemId)
+    {
+        ShowKeyItem(itemId);
+    }
+
+    // ---------------------------------------------------------------
+    // HUD update methods — still public for direct calls where needed
     // ---------------------------------------------------------------
 
     /// <summary>

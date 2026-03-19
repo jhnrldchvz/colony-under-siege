@@ -1,9 +1,10 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(CharacterController))]
-public class PlayerController : MonoBehaviour, IDamageable
+public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
     public float walkSpeed        = 4f;
@@ -34,6 +35,12 @@ public class PlayerController : MonoBehaviour, IDamageable
     public int  CurrentHealth { get; private set; }
     public bool IsAlive       { get; private set; } = true;
 
+    /// <summary>Fired when health changes. UIManager subscribes to this.</summary>
+    public event Action<int> OnHealthChanged;
+
+    /// <summary>Fired once on Start with maxHealth. UIManager subscribes to this.</summary>
+    public event Action<int> OnMaxHealthSet;
+
     private CharacterController _cc;
     private Vector3             _velocity;
     private float               _verticalLook;
@@ -47,6 +54,8 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         CurrentHealth = maxHealth;
 
+        OnMaxHealthSet?.Invoke(maxHealth);
+        // Keep direct call as fallback if UIManager subscribes late
         if (UIManager.Instance != null)
             UIManager.Instance.SetMaxHealth(maxHealth);
 
@@ -179,6 +188,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (!IsAlive) return;
         CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
+        OnHealthChanged?.Invoke(CurrentHealth);
         if (UIManager.Instance != null) UIManager.Instance.UpdateHealth(CurrentHealth);
 
         // Trigger visual hit feedback
@@ -197,6 +207,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         if (!IsAlive) return;
         CurrentHealth = Mathf.Min(maxHealth, CurrentHealth + amount);
+        OnHealthChanged?.Invoke(CurrentHealth);
         if (UIManager.Instance != null) UIManager.Instance.UpdateHealth(CurrentHealth);
         Debug.Log($"[Player] Healed {amount}. HP:{CurrentHealth}/{maxHealth}");
     }
