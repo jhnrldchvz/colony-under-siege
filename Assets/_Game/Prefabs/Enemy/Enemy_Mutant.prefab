@@ -681,27 +681,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a7883bfcd63ca63c845e9c406ca283d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
-  patrolPoints:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  patrolPoints: []
   patrolWaitTime: 2
-  patrolSpeed: 2.5
-  detectionRange: 10
-  fieldOfView: 110
-  losePlayerRange: 14
   sightBlockLayers:
     serializedVersion: 2
     m_Bits: 1
-  chaseSpeed: 5
-  attackRange: 2
-  attackDamage: 10
-  attackCooldown: 1.5
   healthBar: {fileID: 4166624857616139509}
   nameLabel: {fileID: 7680563041999490183}
   statPreset: {fileID: 11400000, guid: 82886c04d77f7c58c9a3792fc13ec53f, type: 2}
-  maxHealth: 100
   lootDropPrefab: {fileID: 7030141120286086437, guid: 82ce46e867ea7a917a26834bfd302d28, type: 3}
-  dropChance: 0.85
   destroyDelay: 0
+  deathEffectPrefab: {fileID: 0}
+  deathEffectOffset: {x: 0, y: 0.5, z: 0}

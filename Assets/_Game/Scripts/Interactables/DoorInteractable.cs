@@ -147,20 +147,26 @@ public class DoorInteractable : MonoBehaviour, IInteractable
     }
 
     private void OpenDoor()
+{
+    // Has a next scene — load it directly, skip win panel
+    if (nextSceneBuildIndex >= 0)
     {
-        // Trigger win screen — door is the win condition
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.TriggerStageWin();
-            return;
-        }
-
-        // Fallback — load next scene directly
-        if (nextSceneBuildIndex >= 0)
-            GameManager.Instance?.LoadScene(nextSceneBuildIndex);
-        else
-            LevelManager.Instance?.LoadNextLevel();
+        Debug.Log($"[Door] Loading next scene: {nextSceneBuildIndex}");
+        GameManager.Instance?.LoadScene(nextSceneBuildIndex);
+        return;
     }
+
+    // Use LevelManager if it has a next level configured
+    if (LevelManager.Instance != null && !LevelManager.Instance.IsLastLevel())
+    {
+        LevelManager.Instance.LoadNextLevel();
+        return;
+    }
+
+    // Last level — show win panel
+    Debug.Log("[Door] Last level — showing win screen.");
+    GameManager.Instance?.TriggerStageWin();
+}       
 
     private System.Collections.IEnumerator FlashLocked()
     {

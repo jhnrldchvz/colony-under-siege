@@ -15,11 +15,14 @@ MonoBehaviour:
   enemyName: Berserker
   maxHealth: 35
   patrolSpeed: 5
-  chaseSpeed: 10
-  detectionRange: 9
+  chaseSpeed: 15
+  detectionRange: 50
   fieldOfView: 120
-  loseRange: 13
+  loseRange: 400
   attackRange: 1.8
   attackDamage: 20
   attackCooldown: 0.7
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  preferredRange: 10
   dropChance: 0.84999996

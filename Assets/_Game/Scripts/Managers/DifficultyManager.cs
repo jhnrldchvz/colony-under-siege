@@ -176,6 +176,9 @@ private System.Collections.IEnumerator InitializeAfterEnemiesRegister()
             TotalShotsHit++;
         }
 
+        // Report to test metrics collector if present in scene
+        TestMetricsCollector.Instance?.RecordShot(hitEnemy);
+
         Debug.Log($"[DifficultyManager] Shot reported. Window: " +
                   $"{_shotsHitInWindow}/{_shotsFiredinWindow} " +
                   $"({WindowAccuracy * 100f:F0}%) | " +
@@ -222,6 +225,10 @@ private System.Collections.IEnumerator InitializeAfterEnemiesRegister()
 
         ApplyTierToAllEnemies(newTier);
         OnTierChanged?.Invoke(newTier);
+
+        // Report to test metrics collector if present in scene
+        TestMetricsCollector.Instance?.RecordDDAChange(
+            previous.ToString(), newTier.ToString(), WindowAccuracy);
 
         Debug.Log($"[DifficultyManager] Tier changed: {previous} → {newTier}");
     }

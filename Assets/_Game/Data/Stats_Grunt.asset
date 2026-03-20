@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Grunt
   maxHealth: 20
-  patrolSpeed: 1.5
+  patrolSpeed: 2
   chaseSpeed: 4
-  detectionRange: 12
-  fieldOfView: 120
-  loseRange: 16
+  detectionRange: 90
+  fieldOfView: 180
+  loseRange: 20
   attackRange: 1.8
   attackDamage: 5
   attackCooldown: 2.5

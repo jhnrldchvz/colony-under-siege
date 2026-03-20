@@ -681,11 +681,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a7883bfcd63ca63c845e9c406ca283d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
-  patrolPoints:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  patrolPoints: []
   patrolWaitTime: 2
   sightBlockLayers:
     serializedVersion: 2
@@ -695,3 +691,5 @@ MonoBehaviour:
   statPreset: {fileID: 11400000, guid: f584bd81ca961bf4fbdab5ac9f4dcc23, type: 2}
   lootDropPrefab: {fileID: 7030141120286086437, guid: 82ce46e867ea7a917a26834bfd302d28, type: 3}
   destroyDelay: 0
+  deathEffectPrefab: {fileID: 0}
+  deathEffectOffset: {x: 0, y: 0.5, z: 0}

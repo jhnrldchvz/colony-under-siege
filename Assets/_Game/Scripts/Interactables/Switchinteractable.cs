@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using TMPro;
 
 /// <summary>
 /// SwitchInteractable — a toggle switch or lever the player can activate.
@@ -41,8 +42,22 @@ public class SwitchInteractable : MonoBehaviour, IInteractable
     [Tooltip("Local rotation applied to switchVisual when ON")]
     public Vector3 activatedRotation = new Vector3(45f, 0f, 0f);
 
+    [Header("Proximity Label")]
+    public Canvas            labelCanvas;
+    public TextMeshProUGUI   labelText;
+    public float             labelRange   = 4f;
+    public float             fadeSpeed    = 8f;
+    public string            interactPrompt    = "[E] Activate terminal";
+    public string            activatedPrompt   = "Terminal active";
+
+    [Header("Outline")]
+    public Outline outline;
+
     private Quaternion _offRotation;
     private Quaternion _onRotation;
+    private Transform  _player;
+    private Camera     _cam;
+    private CanvasGroup _cg;
 
     private void Start()
     {
@@ -50,6 +65,47 @@ public class SwitchInteractable : MonoBehaviour, IInteractable
         {
             _offRotation = switchVisual.localRotation;
             _onRotation  = Quaternion.Euler(activatedRotation);
+        }
+
+        _cam = Camera.main;
+        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        if (p != null) _player = p.transform;
+
+        if (labelCanvas != null)
+        {
+            _cg       = labelCanvas.GetComponent<CanvasGroup>();
+            if (_cg == null) _cg = labelCanvas.gameObject.AddComponent<CanvasGroup>();
+            _cg.alpha = 0f;
+            labelCanvas.gameObject.SetActive(false);
+        }
+
+        if (outline != null) outline.enabled = false;
+    }
+
+    private void Update()
+    {
+        if (_player == null) return;
+
+        float dist        = Vector3.Distance(transform.position, _player.position);
+        bool  nearPlayer  = dist <= labelRange;
+
+        if (outline != null) outline.enabled = nearPlayer;
+
+        if (nearPlayer && labelText != null)
+            labelText.text = IsOn ? activatedPrompt : interactPrompt;
+
+        if (_cg != null)
+        {
+            _cg.alpha = Mathf.Lerp(_cg.alpha, nearPlayer ? 1f : 0f,
+                                   Time.deltaTime * fadeSpeed);
+
+            bool active = _cg.alpha > 0.01f;
+            if (labelCanvas.gameObject.activeSelf != active)
+                labelCanvas.gameObject.SetActive(active);
+
+            if (_cam != null && active)
+                labelCanvas.transform.LookAt(
+                    labelCanvas.transform.position + _cam.transform.forward);
         }
     }
 
