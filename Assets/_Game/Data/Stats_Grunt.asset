@@ -16,8 +16,8 @@ MonoBehaviour:
   maxHealth: 20
   patrolSpeed: 2
   chaseSpeed: 4
-  detectionRange: 90
-  fieldOfView: 180
+  detectionRange: 60
+  fieldOfView: 140
   loseRange: 20
   attackRange: 1.8
   attackDamage: 5

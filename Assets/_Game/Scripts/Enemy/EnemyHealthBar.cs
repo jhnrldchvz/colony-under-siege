@@ -95,9 +95,11 @@ public class EnemyHealthBar : MonoBehaviour
     {
         if (_cam == null) return;
 
-        // Billboard — always face camera
-        transform.LookAt(
-            transform.position + _cam.transform.forward);
+        // Billboard — Y axis only, X position stays fixed
+        Vector3 forward = _cam.transform.forward;
+        forward.y = 0f;
+        if (forward != Vector3.zero)
+            transform.rotation = Quaternion.LookRotation(forward);
 
         // Smooth fill animation
         _currentFill = Mathf.Lerp(_currentFill, _targetFill,
@@ -155,6 +157,17 @@ public class EnemyHealthBar : MonoBehaviour
             fillImage.fillAmount = 1f;
 
         SetVisible(false, instant: true);
+    }
+
+    /// <summary>
+    /// Forces the health bar visible temporarily even at long range.
+    /// Called when enemy takes damage so player gets hit confirmation.
+    /// </summary>
+    public void ForceShow()
+    {
+        _isDamaged = true;
+        _hideTimer = hideDelay;
+        SetVisible(true);
     }
 
     /// <summary>

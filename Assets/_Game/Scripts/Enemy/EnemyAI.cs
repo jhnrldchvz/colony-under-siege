@@ -17,7 +17,7 @@ using UnityEngine.AI;
 ///   1. Attach to an enemy GameObject that has a NavMeshAgent component.
 ///   2. Bake a NavMesh on your level geometry (Window → AI → Navigation → Bake).
 ///   3. Create child GameObjects as waypoints and assign them to the
-///      patrolPoints array in the Inspector.
+///      Patrol Radius controls the wander area around the spawn point.
 ///   4. Set the Player tag to "Player" in Edit → Project Settings → Tags.
 ///   5. Assign an EnemyStats preset — all combat/movement stats come from there.
 /// </summary>
@@ -42,10 +42,10 @@ public class EnemyAI : MonoBehaviour, IDamageable
     // ---------------------------------------------------------------
 
     [Header("Patrol")]
-    [Tooltip("Waypoints the enemy walks between. Assign 2+ transforms.")]
-    public Transform[] patrolPoints;
+    [Tooltip("Radius around spawn point within which enemy picks random patrol destinations")]
+    public float patrolRadius   = 10f;
 
-    [Tooltip("How long the enemy waits at each waypoint before moving on")]
+    [Tooltip("How long the enemy waits at each patrol point before picking a new one")]
     public float patrolWaitTime = 2f;
 
     [Header("Detection")]
@@ -123,9 +123,10 @@ public class EnemyAI : MonoBehaviour, IDamageable
     // Private — patrol
     // ---------------------------------------------------------------
 
-    private int   _patrolIndex = 0;
-    private bool  _isWaiting   = false;
-    private float _waitTimer   = 0f;
+    private Vector3 _spawnPoint;
+    private bool    _isWaiting      = false;
+    private float   _waitTimer      = 0f;
+    private bool    _hasDestination = false;
 
     // ---------------------------------------------------------------
     // Private — attack / health / return
@@ -133,7 +134,6 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private float   _attackTimer = 0f;
     private int     _currentHealth;
-    private Vector3 _lastPatrolPosition;
 
     // ---------------------------------------------------------------
     // Animator parameter hashes — cached for performance
@@ -172,6 +172,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         EnemyManager.Instance?.RegisterEnemy(this);
         InitFlash();
+        _spawnPoint = transform.position;
 
         if (DifficultyManager.Instance != null)
             ApplyDifficultySettings(
@@ -179,7 +180,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
                     DifficultyManager.Instance.CurrentTier));
 
         SetState(EnemyState.Patrol);
-        GoToNextPatrolPoint();
+        PickRandomPatrolPoint();
     }
 
     private void Update()
@@ -210,8 +211,6 @@ public class EnemyAI : MonoBehaviour, IDamageable
             return;
         }
 
-        if (patrolPoints == null || patrolPoints.Length == 0) return;
-
         SetAnimatorSpeed(_agent.velocity.magnitude);
 
         if (_isWaiting)
@@ -219,27 +218,57 @@ public class EnemyAI : MonoBehaviour, IDamageable
             _waitTimer -= Time.deltaTime;
             if (_waitTimer <= 0f)
             {
-                _isWaiting = false;
-                GoToNextPatrolPoint();
+                _isWaiting       = false;
+                _hasDestination  = false;
             }
             return;
         }
 
+        // Pick a new random destination if we don't have one
+        if (!_hasDestination)
+        {
+            PickRandomPatrolPoint();
+            return;
+        }
+
+        // Arrived at destination — wait before picking next
         if (!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
         {
-            _lastPatrolPosition = transform.position;
-            _isWaiting          = true;
-            _waitTimer          = patrolWaitTime;
+            _isWaiting      = true;
+            _waitTimer      = patrolWaitTime;
+            _hasDestination = false;
         }
     }
 
-    private void GoToNextPatrolPoint()
+    private void PickRandomPatrolPoint()
     {
-        if (patrolPoints == null || patrolPoints.Length == 0) return;
+        // Try up to 8 times to find a valid NavMesh point
+        // Samples around current position so enemy explores progressively
+        // but clamps to patrolRadius from spawn so it never wanders the whole map
+        for (int i = 0; i < 8; i++)
+        {
+            Vector2 rand2D  = UnityEngine.Random.insideUnitCircle * patrolRadius;
+            Vector3 randPos = transform.position + new Vector3(rand2D.x, 0f, rand2D.y);
 
-        _agent.speed = patrolSpeed;
-        _agent.SetDestination(patrolPoints[_patrolIndex].position);
-        _patrolIndex = (_patrolIndex + 1) % patrolPoints.Length;
+            // Clamp so enemy never goes beyond patrolRadius * 2 from spawn
+            Vector3 fromSpawn = randPos - _spawnPoint;
+            if (fromSpawn.magnitude > patrolRadius * 2f)
+                randPos = _spawnPoint + fromSpawn.normalized * patrolRadius * 2f;
+
+            UnityEngine.AI.NavMeshHit hit;
+            if (UnityEngine.AI.NavMesh.SamplePosition(
+                    randPos, out hit, patrolRadius, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                _agent.speed = patrolSpeed;
+                _agent.SetDestination(hit.position);
+                _hasDestination = true;
+                return;
+            }
+        }
+
+        // Could not find valid point — wait and try again
+        _isWaiting  = true;
+        _waitTimer  = 1f;
     }
 
     // ---------------------------------------------------------------
@@ -415,7 +444,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         if (!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
         {
             SetState(EnemyState.Patrol);
-            GoToNextPatrolPoint();
+            PickRandomPatrolPoint();
         }
     }
 
@@ -442,8 +471,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
                 break;
             case EnemyState.Return:
                 _agent.speed = patrolSpeed;
-                if (_lastPatrolPosition != Vector3.zero)
-                    _agent.SetDestination(_lastPatrolPosition);
+                _agent.SetDestination(_spawnPoint);
                 break;
         }
 
@@ -463,14 +491,29 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         if (distance > detectionRange) return false;
 
-        float angle = Vector3.Angle(transform.forward, toPlayer);
-        if (angle > fieldOfView * 0.5f) return false;
+        // Horizontal FOV check — flatten both vectors to XZ plane
+        Vector3 forwardFlat  = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
+        Vector3 toPlayerFlat = new Vector3(toPlayer.x, 0f, toPlayer.z).normalized;
+        float   hAngle       = Vector3.Angle(forwardFlat, toPlayerFlat);
 
-        if (Physics.Raycast(transform.position + Vector3.up * 1f,
-                            toPlayer.normalized,
-                            distance,
-                            sightBlockLayers))
-            return false;
+        // Vertical angle check — how far above/below the enemy the player is
+        float vAngle = Mathf.Abs(Mathf.Atan2(toPlayer.y, new Vector2(toPlayer.x, toPlayer.z).magnitude) * Mathf.Rad2Deg);
+
+        // Outside horizontal FOV AND player is not directly above (within 60 degrees vertical)
+        if (hAngle > fieldOfView * 0.5f && vAngle < 60f) return false;
+
+        // If player is directly above (vAngle >= 60) and within close range — always detect
+        if (vAngle >= 60f && distance > detectionRange * 0.5f) return false;
+
+        // Line of sight check — only blocked by environment geometry
+        if (sightBlockLayers.value != 0)
+        {
+            if (Physics.Raycast(transform.position + Vector3.up * 1f,
+                                toPlayer.normalized,
+                                distance,
+                                sightBlockLayers))
+                return false;
+        }
 
         return true;
     }
@@ -488,11 +531,13 @@ public class EnemyAI : MonoBehaviour, IDamageable
         Debug.Log($"[EnemyAI] {gameObject.name} took {amount} damage. HP: {_currentHealth}/{maxHealth}");
 
         healthBar?.UpdateHealth(_currentHealth, maxHealth);
+        healthBar?.ForceShow(); // Show briefly even at long range when hit
 
         // Flash red on hit
         StartCoroutine(FlashHit());
 
-        if (CurrentState == EnemyState.Patrol || CurrentState == EnemyState.Return)
+        // Chase player when damaged regardless of current state
+        if (CurrentState != EnemyState.Dead && CurrentState != EnemyState.Chase && CurrentState != EnemyState.Attack)
             SetState(EnemyState.Chase);
 
         if (_currentHealth <= 0)
