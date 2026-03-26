@@ -70,9 +70,16 @@ public class LevelManager : MonoBehaviour
 
     private void Start()
     {
+        // Clear key items from previous level — ammo and weapons carry over
+        InventoryManager.Instance?.ClearKeyItems();
+
         // Subscribe to the win event from ObjectiveManager
         if (ObjectiveManager.Instance != null)
             ObjectiveManager.Instance.OnAllObjectivesComplete += OnStageComplete;
+
+        // Subscribe to GameManager.OnStageWin — fires when door is entered
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnStageWin += OnStageComplete;
 
         Debug.Log($"[LevelManager] '{levelName}' started. " +
                   $"Next scene index: {nextSceneBuildIndex}");
@@ -82,6 +89,9 @@ public class LevelManager : MonoBehaviour
     {
         if (ObjectiveManager.Instance != null)
             ObjectiveManager.Instance.OnAllObjectivesComplete -= OnStageComplete;
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnStageWin -= OnStageComplete;
 
         if (Instance == this) Instance = null;
     }

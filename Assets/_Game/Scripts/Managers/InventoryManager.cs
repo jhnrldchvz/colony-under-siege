@@ -275,10 +275,8 @@ public class InventoryManager : MonoBehaviour
             Debug.Log($"[InventoryManager] Key item collected: '{itemId}'. " +
                       $"Total: {_keyItems.Count}");
             OnKeyItemAdded?.Invoke(itemId);
-
-            // Show key indicator in HUD
-            if (UIManager.Instance != null)
-                UIManager.Instance.ShowKeyItem(itemId);
+            // UIManager.OnKeyItemCollected subscribes to this event
+            // and routes to the correct indicator — no direct call needed
         }
         else
         {
@@ -304,6 +302,17 @@ public class InventoryManager : MonoBehaviour
     // ---------------------------------------------------------------
     // Reset — called on scene reload
     // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Clears only key items — ammo and weapons are preserved.
+    /// LevelManager calls this on new level load so previous level
+    /// keys do not carry over into the next scene.
+    /// </summary>
+    public void ClearKeyItems()
+    {
+        _keyItems.Clear();
+        Debug.Log("[InventoryManager] Key items cleared.");
+    }
 
     /// <summary>
     /// Clears all ammo and key items.

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -82,7 +83,7 @@ public class UIManager : MonoBehaviour
     public GameObject crosshair;
 
     [Header("HUD — Key Item")]
-    [Tooltip("Image shown when player has collected the key — hidden by default")]
+    [Tooltip("Image shown when player has collected the access key — hidden by default")]
     public GameObject keyItemIndicator;
 
     [Tooltip("Optional icon image inside the key indicator")]
@@ -90,6 +91,26 @@ public class UIManager : MonoBehaviour
 
     [Tooltip("Optional text label e.g. 'Access Key'")]
     public TextMeshProUGUI keyItemText;
+
+    [Header("HUD — Power Cell 1")]
+    [Tooltip("Shown when power_cell_01 is collected — hidden by default")]
+    public GameObject powerCell1Indicator;
+
+    [Tooltip("Icon image for power cell 1")]
+    public UnityEngine.UI.Image powerCell1Icon;
+
+    [Tooltip("Text label for power cell 1")]
+    public TextMeshProUGUI powerCell1Text;
+
+    [Header("HUD — Power Cell 2")]
+    [Tooltip("Shown when power_cell_02 is collected — hidden by default")]
+    public GameObject powerCell2Indicator;
+
+    [Tooltip("Icon image for power cell 2")]
+    public UnityEngine.UI.Image powerCell2Icon;
+
+    [Tooltip("Text label for power cell 2")]
+    public TextMeshProUGUI powerCell2Text;
 
     // ---------------------------------------------------------------
     // Inspector slots — Pause panel
@@ -161,6 +182,9 @@ public class UIManager : MonoBehaviour
             pc.OnMaxHealthSet    += SetMaxHealth;
         }
 
+        // Delay HUD init by one frame so InventoryManager events settle first
+        StartCoroutine(DelayedHUDInit());
+
         // Wire buttons in code — no Inspector OnClick() needed
         resumeButton?         .onClick.AddListener(() => GameManager.Instance?.ResumeGame());
         pauseRestartButton?   .onClick.AddListener(RestartScene);
@@ -169,8 +193,12 @@ public class UIManager : MonoBehaviour
         nextLevelButton?      .onClick.AddListener(() => { Time.timeScale = 1f; LevelManager.Instance?.LoadNextLevel(); });
         mainMenuButton?       .onClick.AddListener(GoToMainMenu);
 
-        // Start with a clean slate
-        ShowHUDOnly();
+    }
+
+    private IEnumerator DelayedHUDInit()
+    {
+        yield return null; // wait one frame for inventory to settle
+        ShowHUDOnly();     // hide all indicators cleanly
     }
 
     private void OnDestroy()
@@ -231,8 +259,10 @@ public class UIManager : MonoBehaviour
 
         if (pauseOverlay != null) pauseOverlay.SetActive(false);
 
-        // Key indicator hidden by default — shown when key is collected
-        if (keyItemIndicator != null) keyItemIndicator.SetActive(false);
+        // All item indicators hidden by default
+        if (keyItemIndicator  != null) keyItemIndicator.SetActive(false);
+        if (powerCell1Indicator != null) powerCell1Indicator.SetActive(false);
+        if (powerCell2Indicator != null) powerCell2Indicator.SetActive(false);
     }
 
     /// <summary>Shows pause panel on top of the HUD.</summary>
@@ -299,7 +329,19 @@ public class UIManager : MonoBehaviour
     /// <summary>Fires when InventoryManager.OnKeyItemAdded fires.</summary>
     private void OnKeyItemCollected(string itemId)
     {
-        ShowKeyItem(itemId);
+        switch (itemId)
+        {
+            case "power_cell_01":
+                ShowPowerCell1();
+                break;
+            case "power_cell_02":
+                ShowPowerCell2();
+                break;
+            default:
+                // Access key and any other key items
+                ShowKeyItem(itemId);
+                break;
+        }
     }
 
     // ---------------------------------------------------------------
@@ -405,6 +447,24 @@ public class UIManager : MonoBehaviour
     {
         if (keyItemIndicator != null)
             keyItemIndicator.SetActive(false);
+    }
+
+    /// <summary>Shows power cell 1 indicator when collected.</summary>
+    public void ShowPowerCell1(Sprite icon = null)
+    {
+        if (powerCell1Indicator != null) powerCell1Indicator.SetActive(true);
+        if (powerCell1Text != null) powerCell1Text.text = "Power Cell 1";
+        if (powerCell1Icon != null && icon != null) powerCell1Icon.sprite = icon;
+        Debug.Log("[UIManager] Power Cell 1 collected.");
+    }
+
+    /// <summary>Shows power cell 2 indicator when collected.</summary>
+    public void ShowPowerCell2(Sprite icon = null)
+    {
+        if (powerCell2Indicator != null) powerCell2Indicator.SetActive(true);
+        if (powerCell2Text != null) powerCell2Text.text = "Power Cell 2";
+        if (powerCell2Icon != null && icon != null) powerCell2Icon.sprite = icon;
+        Debug.Log("[UIManager] Power Cell 2 collected.");
     }
 
     // ---------------------------------------------------------------

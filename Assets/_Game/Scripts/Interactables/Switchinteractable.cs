@@ -22,6 +22,13 @@ public class SwitchInteractable : MonoBehaviour, IInteractable
     [Tooltip("Must match the requiredItemId in the Objective asset for ActivateSwitch objectives")]
     public string switchId = "switch_01";
 
+    [Header("Requirements")]
+    [Tooltip("Item IDs that must be in inventory before this switch can be activated. Leave empty for no requirement.")]
+    public string[] requiredItemIds = new string[0];
+
+    [Tooltip("Message shown when required items are missing")]
+    public string missingItemsMessage = "Required items missing";
+
     [Header("State")]
     [Tooltip("Can this switch be toggled on and off, or only activated once?")]
     public bool isToggleable = false;
@@ -92,7 +99,14 @@ public class SwitchInteractable : MonoBehaviour, IInteractable
         if (outline != null) outline.enabled = nearPlayer;
 
         if (nearPlayer && labelText != null)
-            labelText.text = IsOn ? activatedPrompt : interactPrompt;
+        {
+            if (IsOn)
+                labelText.text = activatedPrompt;
+            else if (!HasRequiredItems())
+                labelText.text = missingItemsMessage;
+            else
+                labelText.text = interactPrompt;
+        }
 
         if (_cg != null)
         {
@@ -109,9 +123,35 @@ public class SwitchInteractable : MonoBehaviour, IInteractable
         }
     }
 
+    // ---------------------------------------------------------------
+    // Requirements check
+    // ---------------------------------------------------------------
+
+    private bool HasRequiredItems()
+    {
+        if (requiredItemIds == null || requiredItemIds.Length == 0) return true;
+        if (InventoryManager.Instance == null) return false;
+
+        foreach (string id in requiredItemIds)
+        {
+            if (!string.IsNullOrEmpty(id) &&
+                !InventoryManager.Instance.HasKeyItem(id))
+                return false;
+        }
+        return true;
+    }
+
     public void Interact(PlayerController player)
     {
         if (!isToggleable && IsOn) return; // One-time switch already used
+
+        // Check required items before allowing activation
+        if (!HasRequiredItems())
+        {
+            Debug.Log($"[Switch] '{switchId}' — required items not collected.");
+            StartCoroutine(FlashLabel());
+            return;
+        }
 
         IsOn = !IsOn;
 
@@ -134,5 +174,13 @@ public class SwitchInteractable : MonoBehaviour, IInteractable
             onSwitchDeactivated?.Invoke();
             Debug.Log($"[Switch] '{switchId}' deactivated.");
         }
+    }
+    private System.Collections.IEnumerator FlashLabel()
+    {
+        if (labelText == null) yield break;
+        Color original = labelText.color;
+        labelText.color = Color.red;
+        yield return new WaitForSeconds(0.5f);
+        if (labelText != null) labelText.color = original;
     }
 }

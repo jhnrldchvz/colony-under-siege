@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5e0f9670d19d376efa60e89c562af73b, type: 3}
-  m_Name: Obj2_PowerCell2
+  m_Name: Obj2_PowerCell_01
   m_EditorClassIdentifier: Assembly-CSharp::Objective
-  objectiveText: Collect power cell 2
-  objectiveId: Obj2_PowerCell2
+  objectiveText: Collect power cell 1
+  objectiveId: Obj2_PowerCells
   type: 2
   requiredCount: 0
-  requiredItemId: power_cell_02
+  requiredItemId: power_cell_01
