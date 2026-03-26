@@ -147,13 +147,5 @@ public class DestructibleCrate : MonoBehaviour, IDamageable
         if (_mat != null) _mat.color = _baseColor;
     }
 
-    // ---------------------------------------------------------------
-    // Gizmos — show HP in scene view
-    // ---------------------------------------------------------------
 
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireCube(transform.position, transform.localScale);
-    }
 }
