@@ -285,6 +285,7 @@ MonoBehaviour:
     modelObject: {fileID: 6457250731958250765}
     barrelTip: {fileID: 7965482964780368916}
     muzzleFlashFX: {fileID: 100006, guid: 1b493bdcd3b416ad7b84b0ea9ff4fa6c, type: 3}
+    muzzleFlashOffset: {x: 0, y: 0, z: 0.05}
     muzzleColor: {r: 1, g: 0.85, b: 0.4, a: 1}
     muzzleIntensity: 8
     muzzleRange: 3
@@ -298,7 +299,8 @@ MonoBehaviour:
     icon: {fileID: 21300000, guid: d51cab76b90f7b9cc800dae27fb4c700, type: 3}
     modelObject: {fileID: 2206678084762121926}
     barrelTip: {fileID: 5298482094998854418}
-    muzzleFlashFX: {fileID: 0}
+    muzzleFlashFX: {fileID: 100000, guid: 43142f64f71eac0eb971faa675e18147, type: 3}
+    muzzleFlashOffset: {x: 0.25, y: -0.25, z: 1}
     muzzleColor: {r: 1, g: 0.85, b: 0.4, a: 1}
     muzzleIntensity: 8
     muzzleRange: 3
@@ -309,7 +311,6 @@ MonoBehaviour:
     startingAmmo: 36
   playerController: {fileID: 5559844464318006367}
   cameraHolder: {fileID: 0}
-  muzzleFlashPrefab: {fileID: 0}
   hitEffectPrefab: {fileID: 100002, guid: f04e15e9b0b32f24b9e87868e8bfbeea, type: 3}
   muzzleFlashDuration: 0.05
 --- !u!114 &395573435033406781
@@ -390,6 +391,10 @@ PrefabInstance:
     - target: {fileID: 5867147213199658365, guid: f2c82c8e7358cdf1f8c90ef2d9ed819a, type: 3}
       propertyPath: m_Name
       value: Riffle
+      objectReference: {fileID: 0}
+    - target: {fileID: 5867147213199658365, guid: f2c82c8e7358cdf1f8c90ef2d9ed819a, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7091787306696630058, guid: f2c82c8e7358cdf1f8c90ef2d9ed819a, type: 3}
       propertyPath: m_LocalPosition.x
@@ -474,7 +479,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3832703582600944448, guid: bceefb2a39f6db74d9bc9d006687b7f1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1
+      value: 0.7965169
       objectReference: {fileID: 0}
     - target: {fileID: 3832703582600944448, guid: bceefb2a39f6db74d9bc9d006687b7f1, type: 3}
       propertyPath: m_LocalPosition.y
@@ -482,7 +487,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3832703582600944448, guid: bceefb2a39f6db74d9bc9d006687b7f1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.45
+      value: 1.5427072
       objectReference: {fileID: 0}
     - target: {fileID: 3832703582600944448, guid: bceefb2a39f6db74d9bc9d006687b7f1, type: 3}
       propertyPath: m_LocalRotation.w
