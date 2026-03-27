@@ -15,10 +15,12 @@ public class WeaponController : MonoBehaviour
         public string     displayName  = "Rifle";
         public Sprite     icon;
         public GameObject modelObject;  // Drag weapon model here (child of CameraHolder)
-        public Transform  barrelTip;     // Empty GameObject at barrel tip (optional)
-        public Color      muzzleColor   = new Color(1f, 0.85f, 0.4f); // Flash color
-        public float      muzzleIntensity = 8f;                        // Flash brightness
-        public float      muzzleRange    = 3f;                         // Flash radius
+        public Transform  barrelTip;       // Empty at barrel tip
+        public GameObject muzzleFlashFX;   // Drag War FX muzzle prefab here per weapon
+        // Legacy point light fallback (used only if muzzleFlashFX is null)
+        public Color      muzzleColor     = new Color(1f, 0.85f, 0.4f);
+        public float      muzzleIntensity = 8f;
+        public float      muzzleRange     = 3f;
         public int        damage       = 5;
         public float   range        = 50f;
         public float   fireRate     = 0.1f;   // Seconds between shots
@@ -195,11 +197,22 @@ public class WeaponController : MonoBehaviour
 
         if (!InventoryManager.Instance.UseAmmo(Current.type))
         {
+            // Empty click sound
+            if (Current.type == InventoryManager.WeaponType.Rifle)
+                SFXManager.Instance?.PlayRifleEmpty();
+            else
+                SFXManager.Instance?.PlayPistolEmpty();
             TryReload();
             return;
         }
 
         _nextFireTime = Time.time + Current.fireRate;
+
+        // Gunshot sound
+        if (Current.type == InventoryManager.WeaponType.Rifle)
+            SFXManager.Instance?.PlayRifleShot();
+        else
+            SFXManager.Instance?.PlayPistolShot();
 
         PerformRaycast();
         SpawnMuzzleFlash();
@@ -267,6 +280,7 @@ public class WeaponController : MonoBehaviour
     private IEnumerator ReloadCoroutine()
     {
         _isReloading = true;
+        SFXManager.Instance?.PlayReload();
         Debug.Log($"[WeaponController] Reloading {Current.displayName}...");
 
         yield return new WaitForSeconds(Current.reloadTime);
@@ -360,27 +374,39 @@ public class WeaponController : MonoBehaviour
     private void SpawnMuzzleFlash()
     {
         if (cameraHolder == null) return;
-        StartCoroutine(FlashLight());
-    }
 
-    private IEnumerator FlashLight()
-    {
         // Spawn position — barrel tip if set, otherwise in front of camera
-        Vector3 pos = Current.barrelTip != null
+        Vector3   pos = Current.barrelTip != null
             ? Current.barrelTip.position
             : cameraHolder.position + cameraHolder.forward * 0.5f;
 
-        // Create light GameObject
-        GameObject lightObj  = new GameObject("MuzzleFlashLight");
+        Quaternion rot = cameraHolder.rotation;
+
+        // Use War FX prefab if assigned — otherwise fall back to point light
+        if (Current.muzzleFlashFX != null)
+        {
+            GameObject fx = Instantiate(Current.muzzleFlashFX, pos, rot);
+            // War FX prefabs self-destruct via CFX_AutoDestructShuriken
+            // Safety fallback destroy in case auto-destruct is removed
+            Destroy(fx, 0.5f);
+        }
+        else
+        {
+            StartCoroutine(FlashLight(pos));
+        }
+    }
+
+    private IEnumerator FlashLight(Vector3 pos)
+    {
+        GameObject lightObj = new GameObject("MuzzleFlashLight");
         lightObj.transform.position = pos;
 
-        Light lt         = lightObj.AddComponent<Light>();
-        lt.type          = LightType.Point;
-        lt.color         = Current.muzzleColor;
-        lt.range         = Current.muzzleRange;
-        lt.shadows       = LightShadows.None;
+        Light lt     = lightObj.AddComponent<Light>();
+        lt.type      = LightType.Point;
+        lt.color     = Current.muzzleColor;
+        lt.range     = Current.muzzleRange;
+        lt.shadows   = LightShadows.None;
 
-        // 3-frame brightness fade: full → half → off
         lt.intensity = Current.muzzleIntensity;
         yield return null;
         lt.intensity = Current.muzzleIntensity * 0.4f;

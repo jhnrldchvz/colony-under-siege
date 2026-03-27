@@ -3162,6 +3162,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8118735861201507748, guid: 481006003815ae79a8d61a2bbe8a8f45, type: 3}
   m_PrefabInstance: {fileID: 278848184}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &279929619
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 279929621}
+  - component: {fileID: 279929620}
+  m_Layer: 0
+  m_Name: SFXManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &279929620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 279929619}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef00b5b72e3e76cf690b45b261836f85, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXManager
+  rifleShots:
+  - {fileID: 8300000, guid: 5b709e5b0585fb27fba92284edac3472, type: 3}
+  rifleEmpty: {fileID: 8300000, guid: d75be7a183e5de653b21615703d53796, type: 3}
+  pistolShots:
+  - {fileID: 8300000, guid: 138dd4a3088d5596393ff35c2f7c131e, type: 3}
+  pistolEmpty: {fileID: 8300000, guid: d75be7a183e5de653b21615703d53796, type: 3}
+  reloadSound: {fileID: 8300000, guid: 3ffa40440ee5fc4b2a8a441a15d7f5d0, type: 3}
+  enemyDeath:
+  - {fileID: 8300000, guid: e38d946815a496ab5a65d2f7d6e144c8, type: 3}
+  enemyHurt: []
+  playerHurt:
+  - {fileID: 8300000, guid: e30354c680b53b2a480f03626e4b370d, type: 3}
+  pickupItem: {fileID: 0}
+  throwObject: {fileID: 0}
+  weaponVolume: 1
+  enemyVolume: 1
+  playerVolume: 1
+  pickupVolume: 1
+--- !u!4 &279929621
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 279929619}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 31.31523, y: 0.01, z: 40.33606}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &281395459
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -26775,3 +26837,4 @@ SceneRoots:
   - {fileID: 1560169989}
   - {fileID: 1980824657}
   - {fileID: 839845007}
+  - {fileID: 279929621}

@@ -56,6 +56,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7772500544124306112, guid: a173bd2fde7592c45a08444c8fc77508, type: 3}
+      propertyPath: destroyDelay
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7772500544124306112, guid: a173bd2fde7592c45a08444c8fc77508, type: 3}
+      propertyPath: deathEffectPrefab
+      value: 
+      objectReference: {fileID: 100014, guid: 5332791ebce075d4a9e56f4581e7fb47, type: 3}
+    - target: {fileID: 7772500544124306112, guid: a173bd2fde7592c45a08444c8fc77508, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

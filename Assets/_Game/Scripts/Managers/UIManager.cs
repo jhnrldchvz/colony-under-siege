@@ -124,6 +124,28 @@ public class UIManager : MonoBehaviour
     public Button quitButton;
 
     // ---------------------------------------------------------------
+    // Inspector slots — Settings panel (inside pause menu)
+    // ---------------------------------------------------------------
+
+    [Header("Settings — Mouse")]
+    [Tooltip("Slider controlling mouse sensitivity — wire to PlayerController")]
+    public Slider sensitivitySlider;
+    public TextMeshProUGUI sensitivityValueText;
+
+    [Header("Settings — Audio")]
+    [Tooltip("Slider for master volume (0-1)")]
+    public Slider masterVolumeSlider;
+    public TextMeshProUGUI masterVolumeValueText;
+
+    [Tooltip("Slider for music volume (0-1)")]
+    public Slider musicVolumeSlider;
+    public TextMeshProUGUI musicVolumeValueText;
+
+    [Tooltip("Slider for SFX volume (0-1)")]
+    public Slider sfxVolumeSlider;
+    public TextMeshProUGUI sfxVolumeValueText;
+
+    // ---------------------------------------------------------------
     // Inspector slots — Game Over panel
     // ---------------------------------------------------------------
 
@@ -147,7 +169,13 @@ public class UIManager : MonoBehaviour
     // Private state
     // ---------------------------------------------------------------
 
-    private int _maxHealth = 100; // Updated via SetMaxHealth()
+    private int _maxHealth = 100;
+
+    // PlayerPrefs keys
+    private const string KEY_SENSITIVITY    = "MouseSensitivity";
+    private const string KEY_MASTER_VOLUME  = "MasterVolume";
+    private const string KEY_MUSIC_VOLUME   = "MusicVolume";
+    private const string KEY_SFX_VOLUME     = "SFXVolume";
 
     // ---------------------------------------------------------------
     // Lifecycle
@@ -199,6 +227,140 @@ public class UIManager : MonoBehaviour
     {
         yield return null; // wait one frame for inventory to settle
         ShowHUDOnly();     // hide all indicators cleanly
+    }
+
+    // ---------------------------------------------------------------
+    // Settings — init, load, save
+    // ---------------------------------------------------------------
+
+    private void InitSettings()
+    {
+        // Load saved values — defaults: sensitivity 2, all volumes 1
+        float sens        = PlayerPrefs.GetFloat(KEY_SENSITIVITY,   2f);
+        float masterVol   = PlayerPrefs.GetFloat(KEY_MASTER_VOLUME, 1f);
+        float musicVol    = PlayerPrefs.GetFloat(KEY_MUSIC_VOLUME,  1f);
+        float sfxVol      = PlayerPrefs.GetFloat(KEY_SFX_VOLUME,    1f);
+
+        // Wire sliders
+        if (sensitivitySlider != null)
+        {
+            sensitivitySlider.minValue = 0.5f;
+            sensitivitySlider.maxValue = 10f;
+            sensitivitySlider.value    = sens;
+            sensitivitySlider.onValueChanged.AddListener(OnSensitivityChanged);
+            UpdateSensitivityText(sens);
+        }
+
+        if (masterVolumeSlider != null)
+        {
+            masterVolumeSlider.minValue = 0f;
+            masterVolumeSlider.maxValue = 1f;
+            masterVolumeSlider.value    = masterVol;
+            masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
+            UpdateVolumeText(masterVolumeValueText, masterVol);
+        }
+
+        if (musicVolumeSlider != null)
+        {
+            musicVolumeSlider.minValue = 0f;
+            musicVolumeSlider.maxValue = 1f;
+            musicVolumeSlider.value    = musicVol;
+            musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+            UpdateVolumeText(musicVolumeValueText, musicVol);
+        }
+
+        if (sfxVolumeSlider != null)
+        {
+            sfxVolumeSlider.minValue = 0f;
+            sfxVolumeSlider.maxValue = 1f;
+            sfxVolumeSlider.value    = sfxVol;
+            sfxVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
+            UpdateVolumeText(sfxVolumeValueText, sfxVol);
+        }
+
+        // Apply loaded values immediately
+        ApplySensitivity(sens);
+        ApplyMasterVolume(masterVol);
+        ApplyMusicVolume(musicVol);
+        ApplySFXVolume(sfxVol);
+
+        ShowHUDOnly();
+    }
+
+    // ---------------------------------------------------------------
+    // Slider callbacks
+    // ---------------------------------------------------------------
+
+    private void OnSensitivityChanged(float val)
+    {
+        PlayerPrefs.SetFloat(KEY_SENSITIVITY, val);
+        UpdateSensitivityText(val);
+        ApplySensitivity(val);
+    }
+
+    private void OnMasterVolumeChanged(float val)
+    {
+        PlayerPrefs.SetFloat(KEY_MASTER_VOLUME, val);
+        UpdateVolumeText(masterVolumeValueText, val);
+        ApplyMasterVolume(val);
+    }
+
+    private void OnMusicVolumeChanged(float val)
+    {
+        PlayerPrefs.SetFloat(KEY_MUSIC_VOLUME, val);
+        UpdateVolumeText(musicVolumeValueText, val);
+        ApplyMusicVolume(val);
+    }
+
+    private void OnSFXVolumeChanged(float val)
+    {
+        PlayerPrefs.SetFloat(KEY_SFX_VOLUME, val);
+        UpdateVolumeText(sfxVolumeValueText, val);
+        ApplySFXVolume(val);
+    }
+
+    // ---------------------------------------------------------------
+    // Apply values to game systems
+    // ---------------------------------------------------------------
+
+    private void ApplySensitivity(float val)
+    {
+        PlayerController pc = FindObjectOfType<PlayerController>();
+        if (pc != null) pc.mouseSensitivity = val;
+    }
+
+    private void ApplyMasterVolume(float val)
+    {
+        AudioListener.volume = val;
+    }
+
+    private void ApplyMusicVolume(float val)
+    {
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.SetMusicVolume(val);
+    }
+
+    private void ApplySFXVolume(float val)
+    {
+        // SFXManager reads this when playing sounds
+        if (SFXManager.Instance != null)
+            SFXManager.Instance.masterVolume = val;
+    }
+
+    // ---------------------------------------------------------------
+    // Label helpers
+    // ---------------------------------------------------------------
+
+    private void UpdateSensitivityText(float val)
+    {
+        if (sensitivityValueText != null)
+            sensitivityValueText.text = val.ToString("F1");
+    }
+
+    private void UpdateVolumeText(TextMeshProUGUI label, float val)
+    {
+        if (label != null)
+            label.text = Mathf.RoundToInt(val * 100f) + "%";
     }
 
     private void OnDestroy()

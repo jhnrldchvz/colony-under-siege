@@ -196,6 +196,9 @@ public class PlayerController : MonoBehaviour
         OnHealthChanged?.Invoke(CurrentHealth);
         if (UIManager.Instance != null) UIManager.Instance.UpdateHealth(CurrentHealth);
 
+        // Player hurt sound
+        SFXManager.Instance?.PlayPlayerHurt();
+
         // Trigger visual hit feedback
         HitEffects fx = GetComponent<HitEffects>();
         if (fx != null)

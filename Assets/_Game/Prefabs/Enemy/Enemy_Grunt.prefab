@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1386959405607246, guid: abbd383e1de4abf4e8f71d6191cd45f8, type: 3}
       propertyPath: m_Name
-      value: Robot_Scout_HyperX_Red Variant
+      value: Enemy_Grunt
       objectReference: {fileID: 0}
     - target: {fileID: 4394146973686580, guid: abbd383e1de4abf4e8f71d6191cd45f8, type: 3}
       propertyPath: m_LocalPosition.x
@@ -67,6 +67,14 @@ PrefabInstance:
     - target: {fileID: 6282130045117017602, guid: abbd383e1de4abf4e8f71d6191cd45f8, type: 3}
       propertyPath: m_Height
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7296337772987434993, guid: abbd383e1de4abf4e8f71d6191cd45f8, type: 3}
+      propertyPath: deathEffectPrefab
+      value: 
+      objectReference: {fileID: 100014, guid: 5332791ebce075d4a9e56f4581e7fb47, type: 3}
+    - target: {fileID: 7296337772987434993, guid: abbd383e1de4abf4e8f71d6191cd45f8, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
