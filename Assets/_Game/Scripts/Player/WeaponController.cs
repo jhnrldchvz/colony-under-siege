@@ -388,7 +388,7 @@ public class WeaponController : MonoBehaviour
             GameObject fx = Instantiate(Current.muzzleFlashFX, pos, rot);
             // War FX prefabs self-destruct via CFX_AutoDestructShuriken
             // Safety fallback destroy in case auto-destruct is removed
-            Destroy(fx, 0.5f);
+            Destroy(fx, 0.15f);
         }
         else
         {

@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 /// <summary>
 /// HoldableObject — attach to any physics box the player can grab.
@@ -24,9 +25,22 @@ public class HoldableObject : MonoBehaviour
     [Header("Outline")]
     public Outline outline;
 
+    [Header("Proximity Label")]
+    public Canvas            labelCanvas;
+    public TextMeshProUGUI   labelText;
+    public float             labelRange  = 4f;
+    public float             fadeSpeed   = 8f;
+    public float             labelHeight = 0.8f;
+
     // ---------------------------------------------------------------
-    private Rigidbody _rb;
-    private bool      _used = false;
+    private Rigidbody  _rb;
+    private bool       _used      = false;
+    private Camera     _cam;
+    private Transform  _player;
+    private CanvasGroup _cg;
+
+    private const string HOVER_TEXT = "[E] Pick up";
+    private const string HOLD_TEXT  = "[E] Drop    [RMB] Throw";
 
     private void Awake()
     {
@@ -37,21 +51,82 @@ public class HoldableObject : MonoBehaviour
         if (outline != null) outline.enabled = false;
     }
 
+    private void Start()
+    {
+        _cam = Camera.main;
+        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        if (p != null) _player = p.transform;
+
+        if (labelCanvas != null)
+        {
+            _cg       = labelCanvas.GetComponent<CanvasGroup>();
+            if (_cg == null) _cg = labelCanvas.gameObject.AddComponent<CanvasGroup>();
+            _cg.alpha = 0f;
+            labelCanvas.gameObject.SetActive(false);
+        }
+
+        if (labelText != null) labelText.text = HOVER_TEXT;
+    }
+
+    private bool _isHeld = false;
+
+    private void Update()
+    {
+        if (_player == null) return;
+
+        float dist = Vector3.Distance(transform.position, _player.position);
+        bool  near = dist <= labelRange || _isHeld;
+
+        if (_cg != null)
+        {
+            _cg.alpha = Mathf.Lerp(_cg.alpha, near ? 1f : 0f,
+                                   Time.deltaTime * fadeSpeed);
+            bool active = _cg.alpha > 0.01f;
+            if (labelCanvas.gameObject.activeSelf != active)
+                labelCanvas.gameObject.SetActive(active);
+        }
+
+        // Always keep label upright and facing camera
+        // Use world-space rotation so box rotation never affects the label
+        if (labelCanvas != null && _cam != null)
+        {
+            // Keep label above the box in world space
+            labelCanvas.transform.position = transform.position +
+                Vector3.up * labelHeight;
+
+            // Face camera — Y axis only so label stays upright
+            Vector3 forward = _cam.transform.forward;
+            forward.y = 0f;
+            if (forward != Vector3.zero)
+                labelCanvas.transform.rotation = Quaternion.LookRotation(forward);
+        }
+    }
+
     // ---------------------------------------------------------------
     // Called by GrabController
     // ---------------------------------------------------------------
     public void OnPickedUp()
     {
-        // Can extend — play sound, particles etc.
+        _isHeld = true;
+        // Show hold hint as world label on the object itself
+        if (labelText != null) labelText.text = HOLD_TEXT;
+        if (_cg != null) _cg.alpha = 1f;
+        if (labelCanvas != null) labelCanvas.gameObject.SetActive(true);
     }
 
     public void OnDropped()
     {
+        _isHeld = false;
+        if (labelText != null) labelText.text = HOVER_TEXT;
+        if (_cg != null) _cg.alpha = 0f;
+        if (labelCanvas != null) labelCanvas.gameObject.SetActive(false);
         if (oneTimeUse) _used = true;
     }
 
     public void OnThrown()
     {
+        _isHeld = false;
+        if (labelCanvas != null) labelCanvas.gameObject.SetActive(false);
         if (oneTimeUse) _used = true;
     }
 

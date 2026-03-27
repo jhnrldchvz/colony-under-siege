@@ -15,5 +15,5 @@ MonoBehaviour:
   objectiveText: Activate the server terminal
   objectiveId: Obj2_Terminal
   type: 3
-  requiredCount: 0
-  requiredItemId: terminal_01
+  requiredCount: 1
+  requiredItemId: switch_01

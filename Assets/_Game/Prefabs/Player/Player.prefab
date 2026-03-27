@@ -284,6 +284,7 @@ MonoBehaviour:
     icon: {fileID: 21300000, guid: c82dd71b01fd837cb9801d185e8c0136, type: 3}
     modelObject: {fileID: 6457250731958250765}
     barrelTip: {fileID: 7965482964780368916}
+    muzzleFlashFX: {fileID: 100006, guid: 1b493bdcd3b416ad7b84b0ea9ff4fa6c, type: 3}
     muzzleColor: {r: 1, g: 0.85, b: 0.4, a: 1}
     muzzleIntensity: 8
     muzzleRange: 3
@@ -297,6 +298,7 @@ MonoBehaviour:
     icon: {fileID: 21300000, guid: d51cab76b90f7b9cc800dae27fb4c700, type: 3}
     modelObject: {fileID: 2206678084762121926}
     barrelTip: {fileID: 5298482094998854418}
+    muzzleFlashFX: {fileID: 0}
     muzzleColor: {r: 1, g: 0.85, b: 0.4, a: 1}
     muzzleIntensity: 8
     muzzleRange: 3
