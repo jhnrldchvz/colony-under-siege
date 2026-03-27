@@ -203,12 +203,15 @@ public class UIManager : MonoBehaviour
         }
 
         // Subscribe to PlayerController health event
-        PlayerController pc = FindObjectOfType<PlayerController>();
+        PlayerController pc = FindFirstObjectByType<PlayerController>();
         if (pc != null)
         {
             pc.OnHealthChanged   += UpdateHealth;
             pc.OnMaxHealthSet    += SetMaxHealth;
         }
+
+        // Init settings sliders (loads PlayerPrefs and wires listeners)
+        InitSettings();
 
         // Delay HUD init by one frame so InventoryManager events settle first
         StartCoroutine(DelayedHUDInit());
@@ -235,18 +238,27 @@ public class UIManager : MonoBehaviour
 
     private void InitSettings()
     {
+        // Temporarily activate pause panel so slider components can initialize
+        bool wasActive = false;
+        if (pausePanel != null)
+        {
+            wasActive = pausePanel.activeSelf;
+            pausePanel.SetActive(true);
+        }
+
         // Load saved values — defaults: sensitivity 2, all volumes 1
         float sens        = PlayerPrefs.GetFloat(KEY_SENSITIVITY,   2f);
         float masterVol   = PlayerPrefs.GetFloat(KEY_MASTER_VOLUME, 1f);
         float musicVol    = PlayerPrefs.GetFloat(KEY_MUSIC_VOLUME,  1f);
         float sfxVol      = PlayerPrefs.GetFloat(KEY_SFX_VOLUME,    1f);
 
-        // Wire sliders
+        // Wire sliders — panel must be active for listeners to register
         if (sensitivitySlider != null)
         {
             sensitivitySlider.minValue = 0.5f;
             sensitivitySlider.maxValue = 10f;
             sensitivitySlider.value    = sens;
+            sensitivitySlider.onValueChanged.RemoveAllListeners();
             sensitivitySlider.onValueChanged.AddListener(OnSensitivityChanged);
             UpdateSensitivityText(sens);
         }
@@ -256,6 +268,7 @@ public class UIManager : MonoBehaviour
             masterVolumeSlider.minValue = 0f;
             masterVolumeSlider.maxValue = 1f;
             masterVolumeSlider.value    = masterVol;
+            masterVolumeSlider.onValueChanged.RemoveAllListeners();
             masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
             UpdateVolumeText(masterVolumeValueText, masterVol);
         }
@@ -265,6 +278,7 @@ public class UIManager : MonoBehaviour
             musicVolumeSlider.minValue = 0f;
             musicVolumeSlider.maxValue = 1f;
             musicVolumeSlider.value    = musicVol;
+            musicVolumeSlider.onValueChanged.RemoveAllListeners();
             musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
             UpdateVolumeText(musicVolumeValueText, musicVol);
         }
@@ -274,9 +288,14 @@ public class UIManager : MonoBehaviour
             sfxVolumeSlider.minValue = 0f;
             sfxVolumeSlider.maxValue = 1f;
             sfxVolumeSlider.value    = sfxVol;
+            sfxVolumeSlider.onValueChanged.RemoveAllListeners();
             sfxVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
             UpdateVolumeText(sfxVolumeValueText, sfxVol);
         }
+
+        // Restore pause panel state
+        if (pausePanel != null && !wasActive)
+            pausePanel.SetActive(false);
 
         // Apply loaded values immediately
         ApplySensitivity(sens);
@@ -325,7 +344,7 @@ public class UIManager : MonoBehaviour
 
     private void ApplySensitivity(float val)
     {
-        PlayerController pc = FindObjectOfType<PlayerController>();
+        PlayerController pc = FindFirstObjectByType<PlayerController>();
         if (pc != null) pc.mouseSensitivity = val;
     }
 

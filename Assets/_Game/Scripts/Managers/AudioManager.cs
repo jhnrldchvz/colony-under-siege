@@ -224,6 +224,12 @@ public class AudioManager : MonoBehaviour
             _activeSouce.volume = masterVolume;
     }
 
+    /// <summary>Sets music volume. Called by UIManager settings slider.</summary>
+    public void SetMusicVolume(float vol)
+    {
+        SetVolume(vol);
+    }
+
     public void StopMusic(float fadeDuration = 1f)
     {
         StartCoroutine(FadeOut(_activeSouce, fadeDuration));
