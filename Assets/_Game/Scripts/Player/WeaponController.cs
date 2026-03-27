@@ -66,11 +66,13 @@ public class WeaponController : MonoBehaviour
     // Private — runtime state
     // ---------------------------------------------------------------
 
-    private int    _currentWeaponIndex = 0;      // Index into weapons[]
+    private int    _currentWeaponIndex = 0;
     private float  _nextFireTime       = 0f;
     private bool   _isReloading        = false;
     private bool   _fireHeld           = false;
+    private bool   _weaponHidden       = false;
 
+    private GrabController      _grab;
     private InputSystem_Actions _inputs;
 
     // ---------------------------------------------------------------
@@ -109,6 +111,8 @@ public class WeaponController : MonoBehaviour
             Debug.LogError("[WeaponController] No cameraHolder found! Drag PlayerController.cameraHolder into the slot.");
         else
             Debug.Log($"[WeaponController] Using camera: {cameraHolder.name}");
+
+        _grab = GetComponent<GrabController>();
     }
 
     private void OnEnable()
@@ -154,10 +158,18 @@ public class WeaponController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchToIndex(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchToIndex(1);
 
-        // Scroll wheel switching
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll > 0f)  SwitchToIndex((_currentWeaponIndex + 1) % weapons.Length);
-        if (scroll < 0f)  SwitchToIndex((_currentWeaponIndex - 1 + weapons.Length) % weapons.Length);
+        // Scroll wheel is reserved for GrabController rotation when holding an object
+
+        // Hide weapon model while holding an object
+        bool isHolding = _grab != null && _grab.IsHolding;
+        if (isHolding != _weaponHidden)
+        {
+            _weaponHidden = isHolding;
+            SetWeaponVisible(!isHolding);
+        }
+
+        // Block firing while holding object
+        if (isHolding) return;
 
         if (_isReloading) return;
 
@@ -305,6 +317,18 @@ public class WeaponController : MonoBehaviour
     // ---------------------------------------------------------------
     // Model visibility
     // ---------------------------------------------------------------
+
+    private void SetWeaponVisible(bool visible)
+    {
+        for (int i = 0; i < weapons.Length; i++)
+        {
+            if (weapons[i].modelObject != null)
+            {
+                // Only show the active weapon when visible
+                weapons[i].modelObject.SetActive(visible && i == _currentWeaponIndex);
+            }
+        }
+    }
 
     private void ShowActiveModel()
     {

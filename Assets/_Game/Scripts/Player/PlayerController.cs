@@ -139,6 +139,11 @@ public class PlayerController : MonoBehaviour
         if (!Input.GetKeyDown(interactKey)) return;
         if (cameraHolder == null) return;
 
+        // Skip door/switch interaction while holding a physics object
+        // GrabController handles E key pickup/drop instead
+        GrabController grab = GetComponent<GrabController>();
+        if (grab != null && grab.IsHolding) return;
+
         Vector3 origin    = cameraHolder.position;
         Vector3 direction = cameraHolder.forward;
 
