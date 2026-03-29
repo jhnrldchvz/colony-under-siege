@@ -20,7 +20,7 @@ MonoBehaviour:
   fieldOfView: 140
   loseRange: 20
   attackRange: 1.8
-  attackDamage: 5
+  attackDamage: 30
   attackCooldown: 2.5
   isRanged: 0
   projectilePrefab: {fileID: 0}

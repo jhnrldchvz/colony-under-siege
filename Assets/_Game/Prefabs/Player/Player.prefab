@@ -335,7 +335,7 @@ MonoBehaviour:
   bobAmplitudeY: 0.1
   bobAmplitudeX: 0.1
   bobSpeedThreshold: 0.1
-  sprintBobMultiplier: 3
+  sprintBobMultiplier: 3.5
 --- !u!114 &8397960413037854565
 MonoBehaviour:
   m_ObjectHideFlags: 0

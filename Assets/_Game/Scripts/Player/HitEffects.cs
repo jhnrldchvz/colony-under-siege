@@ -36,6 +36,26 @@ public class HitEffects : MonoBehaviour
     public float  vignetteFadeSpeed = 1.8f;
 
     // ---------------------------------------------------------------
+    // Inspector — Helmet Damage Overlays
+    // ---------------------------------------------------------------
+
+    [Header("Helmet Damage")]
+    [Tooltip("Crack overlay shown below 50% HP — light damage")]
+    public Image helmetCrack1;
+
+    [Tooltip("Crack overlay shown below 25% HP — heavy damage")]
+    public Image helmetCrack2;
+
+    [Tooltip("How fast cracks fade in when threshold is crossed")]
+    public float crackFadeSpeed   = 2f;
+
+    [Tooltip("Max alpha for crack overlays at lowest HP")]
+    public float crackMaxAlpha    = 0.85f;
+
+    [Tooltip("Optional breathing/pulse effect on cracks when critically low")]
+    public bool  crackPulse       = true;
+
+    // ---------------------------------------------------------------
     // Inspector — Camera Shake on Hit
     // ---------------------------------------------------------------
 
@@ -80,6 +100,10 @@ public class HitEffects : MonoBehaviour
     // Vignette
     private float _vignetteAlpha   = 0f;
 
+    // Helmet damage
+    private float _crack1Alpha     = 0f;
+    private float _crack2Alpha     = 0f;
+
     // Shake
     private float   _shakeTimer     = 0f;
     private float   _shakeMagnitude = 0f;
@@ -115,12 +139,17 @@ public class HitEffects : MonoBehaviour
             c.a = 0f;
             hitVignette.color = c;
         }
+
+        // Start helmet overlays fully transparent
+        SetImageAlpha(helmetCrack1, 0f);
+        SetImageAlpha(helmetCrack2, 0f);
     }
 
     private void Update()
     {
         UpdateVignette();
         UpdateCameraShake();
+        UpdateHelmetDamage();
 
         if (enableHeadBob)
             UpdateHeadBob();
@@ -129,6 +158,30 @@ public class HitEffects : MonoBehaviour
     // ---------------------------------------------------------------
     // Public API — called by PlayerController.TakeDamage()
     // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Call this from PlayerController whenever health changes.
+    /// Updates crack overlay visibility based on current HP percentage.
+    /// </summary>
+    public void UpdateHelmetFromHealth(float healthPercent)
+    {
+        // Below 50% — show crack 1
+        float target1 = healthPercent < 0.5f
+            ? Mathf.Lerp(crackMaxAlpha * 0.5f, crackMaxAlpha,
+                         1f - (healthPercent / 0.5f))
+            : 0f;
+
+        // Below 25% — show crack 2
+        float target2 = healthPercent < 0.25f
+            ? Mathf.Lerp(crackMaxAlpha * 0.4f, crackMaxAlpha,
+                         1f - (healthPercent / 0.25f))
+            : 0f;
+
+        _crack1Alpha = Mathf.Lerp(_crack1Alpha, target1,
+                                  Time.deltaTime * crackFadeSpeed);
+        _crack2Alpha = Mathf.Lerp(_crack2Alpha, target2,
+                                  Time.deltaTime * crackFadeSpeed);
+    }
 
     /// <summary>
     /// Trigger hit effects — call this from PlayerController.TakeDamage().
@@ -147,6 +200,42 @@ public class HitEffects : MonoBehaviour
 
         Debug.Log($"[HitEffects] Hit triggered — intensity:{intensity:F2} " +
                   $"alpha:{_vignetteAlpha:F2} shake:{_shakeMagnitude:F2}");
+    }
+
+    // ---------------------------------------------------------------
+    // Helmet damage overlays
+    // ---------------------------------------------------------------
+
+    private void UpdateHelmetDamage()
+    {
+        if (_player == null) return;
+
+        float hp = _player.CurrentHealth;
+        float maxHp = _player.maxHealth;
+        float pct = Mathf.Clamp01(hp / maxHp);
+
+        // Pulse effect when critically low (below 25%)
+        float pulse = 1f;
+        if (crackPulse && pct < 0.25f)
+            pulse = 0.85f + Mathf.Sin(Time.time * 3f) * 0.15f;
+
+        // Apply alpha to crack overlays
+        float a1 = _crack1Alpha * pulse;
+        float a2 = _crack2Alpha * pulse;
+
+        SetImageAlpha(helmetCrack1, a1);
+        SetImageAlpha(helmetCrack2, a2);
+
+        // Update from health each frame
+        UpdateHelmetFromHealth(pct);
+    }
+
+    private void SetImageAlpha(Image img, float alpha)
+    {
+        if (img == null) return;
+        Color c = img.color;
+        c.a = alpha;
+        img.color = c;
     }
 
     // ---------------------------------------------------------------
