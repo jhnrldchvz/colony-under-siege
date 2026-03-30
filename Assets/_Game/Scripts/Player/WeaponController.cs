@@ -33,6 +33,13 @@ public class WeaponController : MonoBehaviour
         public float fireRate = 0.1f;
         public float reloadTime = 1.8f;
         public int startingAmmo = 90;
+
+        [Header("Decoy Launcher (leave empty for normal weapons)")]
+        [Tooltip("If set — this weapon fires decoy grenades instead of raycasting")]
+        public GameObject decoyPrefab;
+        public float      decoyThrowForce  = 15f;
+        public float      decoyUpAngle     = 20f;
+        public bool       isDecoyLauncher  => decoyPrefab != null;
     }
 
     [Header("Weapon Configs")]
@@ -153,9 +160,10 @@ public class WeaponController : MonoBehaviour
         if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
         if (playerController != null && !playerController.IsAlive) return;
 
-        // Weapon switching
+        // Weapon switching — supports any number of weapons via number keys
         if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchToIndex(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchToIndex(1);
+        if (Input.GetKeyDown(KeyCode.Alpha3)) SwitchToIndex(2);
 
         // Hide weapon while holding an object
         bool isHolding = _grab != null && _grab.IsHolding;
@@ -166,6 +174,7 @@ public class WeaponController : MonoBehaviour
         }
 
         if (isHolding) return;
+
         if (_isReloading) return;
 
         if (_fireHeld && Time.time >= _nextFireTime)
@@ -189,29 +198,56 @@ public class WeaponController : MonoBehaviour
 
         if (!InventoryManager.Instance.UseAmmo(Current.type))
         {
-            // Empty click sound
             if (Current.type == InventoryManager.WeaponType.Rifle)
                 SFXManager.Instance?.PlayRifleEmpty();
-            else
+            else if (Current.type != InventoryManager.WeaponType.Decoy)
                 SFXManager.Instance?.PlayPistolEmpty();
-
             TryReload();
             return;
         }
 
         _nextFireTime = Time.time + Current.fireRate;
 
-        // Gunshot sound
-        if (Current.type == InventoryManager.WeaponType.Rifle)
-            SFXManager.Instance?.PlayRifleShot();
+        // Decoy launcher fires a projectile instead of raycasting
+        if (Current.isDecoyLauncher)
+        {
+            FireDecoy();
+        }
         else
-            SFXManager.Instance?.PlayPistolShot();
+        {
+            if (Current.type == InventoryManager.WeaponType.Rifle)
+                SFXManager.Instance?.PlayRifleShot();
+            else
+                SFXManager.Instance?.PlayPistolShot();
 
-        PerformRaycast();
-        SpawnMuzzleFlash();
+            PerformRaycast();
+            SpawnMuzzleFlash();
+        }
+
         RefreshHUD();
+        Debug.Log($"[WeaponController] Fired {Current.displayName}. " +
+                  $"Ammo: {InventoryManager.Instance.GetCurrentAmmo(Current.type)}");
+    }
 
-        Debug.Log($"[WeaponController] Fired {Current.displayName}. Ammo left: {InventoryManager.Instance.GetCurrentAmmo(Current.type)}");
+    private void FireDecoy()
+    {
+        if (Current.decoyPrefab == null || cameraHolder == null) return;
+
+        Vector3 spawnPos = cameraHolder.position + cameraHolder.forward * 0.8f;
+        Vector3 throwDir = Quaternion.AngleAxis(-Current.decoyUpAngle, cameraHolder.right)
+                           * cameraHolder.forward;
+
+        GameObject decoy = Instantiate(Current.decoyPrefab, spawnPos, Quaternion.identity);
+        Rigidbody  rb    = decoy.GetComponent<Rigidbody>();
+
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.useGravity  = true;
+            rb.AddForce(throwDir * Current.decoyThrowForce, ForceMode.VelocityChange);
+        }
+
+        Debug.Log($"[WeaponController] Decoy fired.");
     }
 
     private void PerformRaycast()
@@ -364,6 +400,7 @@ public class WeaponController : MonoBehaviour
     // ---------------------------------------------------------------
     // Model Visibility
     // ---------------------------------------------------------------
+
     private void SetWeaponVisible(bool visible)
     {
         for (int i = 0; i < weapons.Length; i++)

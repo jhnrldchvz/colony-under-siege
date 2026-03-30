@@ -49,7 +49,8 @@ public class InventoryManager : MonoBehaviour
         Pistol,
         Rifle,
         Shotgun,
-        Grenade
+        Grenade,
+        Decoy       // Decoy launcher charges
     }
 
     // ---------------------------------------------------------------
@@ -96,6 +97,7 @@ public class InventoryManager : MonoBehaviour
         RegisterWeapon(WeaponType.Rifle,    magSize: 30, maxRes: 120);
         RegisterWeapon(WeaponType.Shotgun,  magSize: 6,  maxRes: 30);
         RegisterWeapon(WeaponType.Grenade,  magSize: 1,  maxRes: 4);
+        RegisterWeapon(WeaponType.Decoy,    magSize: 3,  maxRes: 3);
     }
 
     /// <summary>

@@ -8,6 +8,7 @@ public class AmmoPickup : MonoBehaviour
     public int    ammoAmount  = 15;
     public string displayName = "Rifle Ammo";
 
+
     [Header("Rotation")]
     public float rotateSpeed    = 90f;
 
@@ -93,6 +94,7 @@ public class AmmoPickup : MonoBehaviour
         _collected = true;
         InventoryManager.Instance.AddAmmo(weaponType, ammoAmount);
         Debug.Log($"[AmmoPickup] Collected '{displayName}' — +{ammoAmount} {weaponType}.");
+        SFXManager.Instance?.PlayPickup();
         Destroy(gameObject);
     }
 }

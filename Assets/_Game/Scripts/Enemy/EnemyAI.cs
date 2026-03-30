@@ -132,7 +132,10 @@ public class EnemyAI : MonoBehaviour, IDamageable
     // Private — attack / health / return
     // ---------------------------------------------------------------
 
-    private float   _attackTimer = 0f;
+    private float   _attackTimer     = 0f;
+    private Vector3 _decoyPosition   = Vector3.zero;
+    private float   _decoyTimer      = 0f;
+    private bool    _isDistracted    => _decoyTimer > 0f;
     private int     _currentHealth;
 
     // ---------------------------------------------------------------
@@ -285,7 +288,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         float dist = Vector3.Distance(transform.position, _player.transform.position);
 
-        if (dist > losePlayerRange)
+        if (!_isDistracted && dist > losePlayerRange)
         {
             SetState(EnemyState.Return);
             return;
@@ -319,15 +322,33 @@ public class EnemyAI : MonoBehaviour, IDamageable
         }
         else
         {
-            // Melee enemy — move directly to player
-            if (dist <= attackRange)
+            // Melee enemy — move directly to player (or decoy if distracted)
+            if (dist <= attackRange && !_isDistracted)
             {
                 SetState(EnemyState.Attack);
                 return;
             }
 
             _agent.speed = chaseSpeed;
-            _agent.SetDestination(_player.transform.position);
+
+            if (_isDistracted)
+            {
+                // Chase decoy position
+                _decoyTimer -= Time.deltaTime;
+                _agent.SetDestination(_decoyPosition);
+
+                // Arrived at decoy — resume normal chase
+                float decoyDist = Vector3.Distance(transform.position, _decoyPosition);
+                if (decoyDist <= 1.5f || _decoyTimer <= 0f)
+                {
+                    _decoyTimer = 0f;
+                    Debug.Log($"[EnemyAI] {gameObject.name} reached decoy — resuming chase.");
+                }
+            }
+            else
+            {
+                _agent.SetDestination(_player.transform.position);
+            }
         }
 
         SetAnimatorSpeed(_agent.velocity.magnitude);
@@ -601,6 +622,32 @@ public class EnemyAI : MonoBehaviour, IDamageable
     // ---------------------------------------------------------------
     // Death
     // ---------------------------------------------------------------
+
+    // ---------------------------------------------------------------
+    // Decoy distraction
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Forces this enemy to chase a world position (the decoy).
+    /// Called by DecoyDevice.EmitNoisePulse().
+    /// </summary>
+    public void DistractTo(Vector3 position)
+    {
+        if (!IsAlive || CurrentState == EnemyState.Dead) return;
+
+        TestMetricsCollector.Instance?.RecordFSMTransition(
+            gameObject.name, CurrentState.ToString(), "Chase(Decoy)");
+
+        // Store decoy position — UpdateChase will follow it instead of player
+        _decoyPosition = position;
+        _decoyTimer    = 8f; // Follow decoy for up to 8s
+
+        _agent.speed = chaseSpeed;
+        _agent.SetDestination(position);
+        SetState(EnemyState.Chase);
+
+        Debug.Log($"[EnemyAI] {gameObject.name} distracted to {position}");
+    }
 
     private void Die()
     {
