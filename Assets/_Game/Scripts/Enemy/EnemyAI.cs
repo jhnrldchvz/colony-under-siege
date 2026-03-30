@@ -588,18 +588,25 @@ public class EnemyAI : MonoBehaviour, IDamageable
     // Hit Flash
     // ---------------------------------------------------------------
 
-    private Renderer[] _renderers;
-    private Color[]    _baseColors;
-    private bool       _flashReady = false;
+    private Renderer[]          _renderers;
+    private Color[]             _baseColors;
+    private MaterialPropertyBlock _propBlock;
+    private bool                _flashReady = false;
+
+    private static readonly int ShaderColorID = Shader.PropertyToID("_Color");
 
     private void InitFlash()
     {
-        _renderers = GetComponentsInChildren<Renderer>();
+        _renderers  = GetComponentsInChildren<Renderer>();
         _baseColors = new Color[_renderers.Length];
+        _propBlock  = new MaterialPropertyBlock();
+
         for (int i = 0; i < _renderers.Length; i++)
         {
-            if (_renderers[i].material != null)
-                _baseColors[i] = _renderers[i].material.color;
+            if (_renderers[i] != null)
+                _baseColors[i] = _renderers[i].sharedMaterial != null
+                    ? _renderers[i].sharedMaterial.color
+                    : Color.white;
         }
         _flashReady = true;
     }
@@ -608,15 +615,18 @@ public class EnemyAI : MonoBehaviour, IDamageable
     {
         if (!_flashReady) yield break;
 
+        _propBlock.SetColor(ShaderColorID, Color.red);
         for (int i = 0; i < _renderers.Length; i++)
-            if (_renderers[i] != null && _renderers[i].material != null)
-                _renderers[i].material.color = Color.red;
+            if (_renderers[i] != null) _renderers[i].SetPropertyBlock(_propBlock);
 
         yield return new WaitForSeconds(0.08f);
 
         for (int i = 0; i < _renderers.Length; i++)
-            if (_renderers[i] != null && _renderers[i].material != null)
-                _renderers[i].material.color = _baseColors[i];
+        {
+            if (_renderers[i] == null) continue;
+            _propBlock.SetColor(ShaderColorID, _baseColors[i]);
+            _renderers[i].SetPropertyBlock(_propBlock);
+        }
     }
 
     // ---------------------------------------------------------------

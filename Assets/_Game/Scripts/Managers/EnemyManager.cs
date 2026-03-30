@@ -61,47 +61,41 @@ public class EnemyManager : MonoBehaviour
     public int AliveCount   => _liveEnemies.Count;
 
     // ---------------------------------------------------------------
-    // Private
+    // Private — HashSet for O(1) Contains / Remove
     // ---------------------------------------------------------------
 
-    private List<EnemyAI> _liveEnemies = new List<EnemyAI>();
+    private readonly HashSet<EnemyAI> _liveEnemies = new HashSet<EnemyAI>();
 
     // ---------------------------------------------------------------
     // Registration — called by EnemyAI.Start() and EnemyAI.Die()
     // ---------------------------------------------------------------
 
     /// <summary>
-    /// Called by EnemyAI.Start() — adds the enemy to the live list.
+    /// Called by EnemyAI.Start() — adds the enemy to the live set.
     /// </summary>
     public void RegisterEnemy(EnemyAI enemy)
     {
-        if (enemy == null || _liveEnemies.Contains(enemy)) return;
+        if (enemy == null || !_liveEnemies.Add(enemy)) return;
 
-        _liveEnemies.Add(enemy);
         TotalEnemies++;
-
         Debug.Log($"[EnemyManager] Registered: {enemy.gameObject.name}. " +
                   $"Total: {TotalEnemies}, Alive: {AliveCount}");
     }
 
     /// <summary>
-    /// Called by EnemyAI.Die() — removes the enemy from the live list
+    /// Called by EnemyAI.Die() — removes the enemy from the live set
     /// and checks if all enemies are defeated.
     /// </summary>
     public void DeregisterEnemy(EnemyAI enemy)
     {
-        if (enemy == null || !_liveEnemies.Contains(enemy)) return;
+        if (enemy == null || !_liveEnemies.Remove(enemy)) return;
 
-        _liveEnemies.Remove(enemy);
         KillCount++;
-
         Debug.Log($"[EnemyManager] Killed: {enemy.gameObject.name}. " +
                   $"Kills: {KillCount}/{TotalEnemies}, Alive: {AliveCount}");
 
-        // Notify subscribers of the updated kill count
         OnEnemyKilled?.Invoke(KillCount);
 
-        // Check if all enemies are gone
         if (_liveEnemies.Count == 0)
         {
             Debug.Log("[EnemyManager] All enemies defeated!");
@@ -113,31 +107,22 @@ public class EnemyManager : MonoBehaviour
     // Queries — used by ObjectiveManager
     // ---------------------------------------------------------------
 
-    /// <summary>
-    /// Returns true if all enemies that were registered are now dead.
-    /// ObjectiveManager calls this to validate a kill-all objective.
-    /// </summary>
+    /// <summary>Returns true if all registered enemies are now dead.</summary>
     public bool AreAllEnemiesDefeated()
     {
         return TotalEnemies > 0 && _liveEnemies.Count == 0;
     }
 
-    /// <summary>
-    /// Returns true if at least the required number of enemies are killed.
-    /// Used for "kill N enemies" objectives that don't require all kills.
-    /// </summary>
+    /// <summary>Returns true if at least the required number of enemies are killed.</summary>
     public bool HasReachedKillTarget(int target)
     {
         return KillCount >= target;
     }
 
-    /// <summary>
-    /// Returns a read-only snapshot of all currently living enemies.
-    /// Useful for debugging or future features like a radar system.
-    /// </summary>
-    public IReadOnlyList<EnemyAI> GetLiveEnemies()
+    /// <summary>Returns a read-only snapshot of all currently living enemies.</summary>
+    public IReadOnlyCollection<EnemyAI> GetLiveEnemies()
     {
-        return _liveEnemies.AsReadOnly();
+        return _liveEnemies;
     }
 
     // ---------------------------------------------------------------

@@ -131,18 +131,18 @@ public class DifficultyManager : MonoBehaviour
     // ---------------------------------------------------------------
 
     private void Start()
-{
-    // Wait one frame so all EnemyAI.Start() calls finish registering first
-    StartCoroutine(InitializeAfterEnemiesRegister());
-}
+    {
+        // Wait one frame so all EnemyAI.Start() calls finish registering first
+        StartCoroutine(InitializeAfterEnemiesRegister());
+    }
 
-private System.Collections.IEnumerator InitializeAfterEnemiesRegister()
-{
-    yield return null; // Wait one frame
+    private System.Collections.IEnumerator InitializeAfterEnemiesRegister()
+    {
+        yield return null; // Wait one frame
 
-    ApplyTierToAllEnemies(DifficultyTier.Normal);
-    Debug.Log("[DifficultyManager] Initialized. Starting tier: Normal.");
-}
+        ApplyTierToAllEnemies(DifficultyTier.Normal);
+        Debug.Log("[DifficultyManager] Initialized. Starting tier: Normal.");
+    }
 
     private void Update()
     {

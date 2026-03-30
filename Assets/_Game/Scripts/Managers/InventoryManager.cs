@@ -344,14 +344,7 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     private void NotifyAmmoChanged(WeaponType type)
     {
-        int current = GetCurrentAmmo(type);
-        int reserve = GetReserveAmmo(type);
-
-        OnAmmoChanged?.Invoke(type, current, reserve);
-
-        // Push directly to UIManager so the HUD updates without extra wiring
-        if (UIManager.Instance != null)
-            UIManager.Instance.UpdateAmmo(current, reserve);
+        OnAmmoChanged?.Invoke(type, GetCurrentAmmo(type), GetReserveAmmo(type));
     }
 
     // ---------------------------------------------------------------

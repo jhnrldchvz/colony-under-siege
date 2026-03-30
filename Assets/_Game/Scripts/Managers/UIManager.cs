@@ -169,13 +169,23 @@ public class UIManager : MonoBehaviour
     // Private state
     // ---------------------------------------------------------------
 
-    private int _maxHealth = 100;
+    private int              _maxHealth = 100;
+    private PlayerController _player;
+
+    // Tracks which item indicators have been shown so they survive pause/resume
+    private bool _keyItemCollected;
+    private bool _powerCell1Collected;
+    private bool _powerCell2Collected;
 
     // PlayerPrefs keys
     private const string KEY_SENSITIVITY    = "MouseSensitivity";
     private const string KEY_MASTER_VOLUME  = "MasterVolume";
     private const string KEY_MUSIC_VOLUME   = "MusicVolume";
     private const string KEY_SFX_VOLUME     = "SFXVolume";
+
+    // Key item IDs — must match InventoryManager.AddKeyItem() calls
+    private const string KEY_POWER_CELL_01 = "power_cell_01";
+    private const string KEY_POWER_CELL_02 = "power_cell_02";
 
     // ---------------------------------------------------------------
     // Lifecycle
@@ -202,12 +212,12 @@ public class UIManager : MonoBehaviour
             InventoryManager.Instance.OnKeyItemAdded += OnKeyItemCollected;
         }
 
-        // Subscribe to PlayerController health event
-        PlayerController pc = FindFirstObjectByType<PlayerController>();
-        if (pc != null)
+        // Cache PlayerController — used for sensitivity and health events
+        _player = FindFirstObjectByType<PlayerController>();
+        if (_player != null)
         {
-            pc.OnHealthChanged   += UpdateHealth;
-            pc.OnMaxHealthSet    += SetMaxHealth;
+            _player.OnHealthChanged += UpdateHealth;
+            _player.OnMaxHealthSet  += SetMaxHealth;
         }
 
         // Init settings sliders (loads PlayerPrefs and wires listeners)
@@ -344,8 +354,7 @@ public class UIManager : MonoBehaviour
 
     private void ApplySensitivity(float val)
     {
-        PlayerController pc = FindFirstObjectByType<PlayerController>();
-        if (pc != null) pc.mouseSensitivity = val;
+        if (_player != null) _player.mouseSensitivity = val;
     }
 
     private void ApplyMasterVolume(float val)
@@ -428,7 +437,7 @@ public class UIManager : MonoBehaviour
     // Panel visibility helpers
     // ---------------------------------------------------------------
 
-    /// <summary>Shows only the HUD. Call this on resume or scene start.</summary>
+    /// <summary>Shows only the HUD. Restores any item indicators the player has collected.</summary>
     private void ShowHUDOnly()
     {
         SetPanel(hudPanel,      true);
@@ -440,10 +449,10 @@ public class UIManager : MonoBehaviour
 
         if (pauseOverlay != null) pauseOverlay.SetActive(false);
 
-        // All item indicators hidden by default
-        if (keyItemIndicator  != null) keyItemIndicator.SetActive(false);
-        if (powerCell1Indicator != null) powerCell1Indicator.SetActive(false);
-        if (powerCell2Indicator != null) powerCell2Indicator.SetActive(false);
+        // Restore collected-item indicators — never reset them on resume
+        if (keyItemIndicator    != null) keyItemIndicator.SetActive(_keyItemCollected);
+        if (powerCell1Indicator != null) powerCell1Indicator.SetActive(_powerCell1Collected);
+        if (powerCell2Indicator != null) powerCell2Indicator.SetActive(_powerCell2Collected);
     }
 
     /// <summary>Shows pause panel on top of the HUD.</summary>
@@ -510,19 +519,9 @@ public class UIManager : MonoBehaviour
     /// <summary>Fires when InventoryManager.OnKeyItemAdded fires.</summary>
     private void OnKeyItemCollected(string itemId)
     {
-        switch (itemId)
-        {
-            case "power_cell_01":
-                ShowPowerCell1();
-                break;
-            case "power_cell_02":
-                ShowPowerCell2();
-                break;
-            default:
-                // Access key and any other key items
-                ShowKeyItem(itemId);
-                break;
-        }
+        if (itemId == KEY_POWER_CELL_01)       ShowPowerCell1();
+        else if (itemId == KEY_POWER_CELL_02)  ShowPowerCell2();
+        else                                   ShowKeyItem(itemId);
     }
 
     // ---------------------------------------------------------------
@@ -611,28 +610,24 @@ public class UIManager : MonoBehaviour
     /// </summary>
     public void ShowKeyItem(string itemName = "Access Key", Sprite icon = null)
     {
-        if (keyItemIndicator != null)
-            keyItemIndicator.SetActive(true);
-
-        if (keyItemText != null)
-            keyItemText.text = itemName;
-
-        if (keyItemIcon != null && icon != null)
-            keyItemIcon.sprite = icon;
-
+        _keyItemCollected = true;
+        if (keyItemIndicator != null) keyItemIndicator.SetActive(true);
+        if (keyItemText != null) keyItemText.text = itemName;
+        if (keyItemIcon != null && icon != null) keyItemIcon.sprite = icon;
         Debug.Log($"[UIManager] Key item shown: {itemName}");
     }
 
-    /// <summary>Hides the key item indicator — call on scene restart.</summary>
+    /// <summary>Hides the key item indicator and clears collected flag — call on scene restart.</summary>
     public void HideKeyItem()
     {
-        if (keyItemIndicator != null)
-            keyItemIndicator.SetActive(false);
+        _keyItemCollected = false;
+        if (keyItemIndicator != null) keyItemIndicator.SetActive(false);
     }
 
     /// <summary>Shows power cell 1 indicator when collected.</summary>
     public void ShowPowerCell1(Sprite icon = null)
     {
+        _powerCell1Collected = true;
         if (powerCell1Indicator != null) powerCell1Indicator.SetActive(true);
         if (powerCell1Text != null) powerCell1Text.text = "Power Cell 1";
         if (powerCell1Icon != null && icon != null) powerCell1Icon.sprite = icon;
@@ -642,6 +637,7 @@ public class UIManager : MonoBehaviour
     /// <summary>Shows power cell 2 indicator when collected.</summary>
     public void ShowPowerCell2(Sprite icon = null)
     {
+        _powerCell2Collected = true;
         if (powerCell2Indicator != null) powerCell2Indicator.SetActive(true);
         if (powerCell2Text != null) powerCell2Text.text = "Power Cell 2";
         if (powerCell2Icon != null && icon != null) powerCell2Icon.sprite = icon;

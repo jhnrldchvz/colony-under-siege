@@ -23,10 +23,18 @@ public class SFXManager : MonoBehaviour
 {
     public static SFXManager Instance { get; private set; }
 
+    // Persistent 2D source — reused for every non-spatial sound via PlayOneShot
+    // (PlayOneShot overlaps clips on the same source, no GameObject spawning needed)
+    private AudioSource _2dSource;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+
+        _2dSource              = gameObject.AddComponent<AudioSource>();
+        _2dSource.spatialBlend = 0f;
+        _2dSource.playOnAwake  = false;
     }
 
     // ---------------------------------------------------------------
@@ -94,36 +102,18 @@ public class SFXManager : MonoBehaviour
     private void PlayRandom(AudioClip[] clips, float vol) =>
         Play2D(RandomClip(clips), vol);
 
+    // Plays non-spatial audio via PlayOneShot — no GameObject allocation
     private void Play2D(AudioClip clip, float vol)
     {
-        if (clip == null) return;
-        GameObject go = new GameObject("SFX_2D");
-        go.transform.position = Camera.main != null
-            ? Camera.main.transform.position : Vector3.zero;
-
-        AudioSource src  = go.AddComponent<AudioSource>();
-        src.clip         = clip;
-        src.volume       = vol * masterVolume;
-        src.spatialBlend = 0f;
-        src.Play();
-        Destroy(go, clip.length + 0.1f);
+        if (clip == null || _2dSource == null) return;
+        _2dSource.PlayOneShot(clip, vol * masterVolume);
     }
 
+    // Plays positional 3D audio — Unity handles the temporary source internally
     private void Play3D(AudioClip clip, Vector3 pos, float vol)
     {
         if (clip == null) return;
-        GameObject go = new GameObject("SFX_3D");
-        go.transform.position = pos;
-
-        AudioSource src  = go.AddComponent<AudioSource>();
-        src.clip         = clip;
-        src.volume       = vol * masterVolume;
-        src.spatialBlend = 1f;
-        src.minDistance  = 2f;
-        src.maxDistance  = 25f;
-        src.rolloffMode  = AudioRolloffMode.Linear;
-        src.Play();
-        Destroy(go, clip.length + 0.1f);
+        AudioSource.PlayClipAtPoint(clip, pos, vol * masterVolume);
     }
 
     private AudioClip RandomClip(AudioClip[] clips)

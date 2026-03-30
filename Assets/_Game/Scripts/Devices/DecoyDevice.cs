@@ -27,11 +27,12 @@ public class DecoyDevice : MonoBehaviour
     public Light      decoyLight;      // Optional point light — flickers on pulse
 
     // ---------------------------------------------------------------
-    private Rigidbody _rb;
-    private bool      _landed     = false;
-    private bool      _active     = false;
-    private float     _timer      = 0f;
-    private float     _pulseTimer = 0f;
+    private Rigidbody  _rb;
+    private bool       _landed     = false;
+    private bool       _active     = false;
+    private float      _timer      = 0f;
+    private float      _pulseTimer = 0f;
+
 
     private void Awake()
     {
@@ -107,27 +108,24 @@ public class DecoyDevice : MonoBehaviour
         if (decoyLight != null)
             StartCoroutine(FlickerLight());
 
-        // Use FindObjectsByType to get ALL EnemyAI in scene
-        // OverlapSphere misses enemies whose root is outside the sphere
-        // but child colliders are inside — this is more reliable
-        EnemyAI[] allEnemies = FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+        // Query EnemyManager — already tracks all living enemies, no scene search needed
+        var enemies    = EnemyManager.Instance?.GetLiveEnemies();
         int distracted = 0;
 
-        foreach (EnemyAI enemy in allEnemies)
+        if (enemies != null)
         {
-            if (!enemy.IsAlive) continue;
+            float radiusSq = distractRadius * distractRadius;
+            foreach (EnemyAI enemy in enemies)
+            {
+                if (!enemy.IsAlive) continue;
+                if ((enemy.transform.position - transform.position).sqrMagnitude > radiusSq) continue;
 
-            float dist = Vector3.Distance(transform.position, enemy.transform.position);
-            if (dist > distractRadius) continue;
-
-            enemy.DistractTo(transform.position);
-            distracted++;
-
-            Debug.Log($"[Decoy] Distracted: {enemy.name} at {dist:F1}m");
+                enemy.DistractTo(transform.position);
+                distracted++;
+            }
         }
 
-        Debug.Log($"[Decoy] Pulse — {distracted}/{allEnemies.Length} enemies distracted " +
-                  $"within {distractRadius}m of decoy at {transform.position}");
+        Debug.Log($"[Decoy] Pulse — distracted {distracted} enemies within {distractRadius}m");
 
         TestMetricsCollector.Instance?.RecordFSMTransition(
             "DecoyDevice", "Pulse", $"Distracted {distracted} enemies");
