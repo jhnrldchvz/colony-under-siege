@@ -37,6 +37,12 @@ public class PressurePlate : MonoBehaviour
     public Color    inactiveColor  = new Color(0.3f, 0.3f, 0.3f);
     public Color    activeColor    = new Color(0.2f, 0.8f, 0.2f);
 
+    [Header("Highlight — shows when player holds a heavy box")]
+    [Tooltip("Quick Outline component on this plate — pulses when player is carrying")]
+    public Outline  plateOutline;
+    public Color    highlightColor = new Color(1f, 0.85f, 0.1f);
+    public Color    activeOutlineColor = new Color(0.2f, 1f, 0.2f);
+
     [Header("Objective")]
     [Tooltip("Optional — notifies ObjectiveManager when activated")]
     public string switchId         = "";
@@ -44,11 +50,45 @@ public class PressurePlate : MonoBehaviour
     // ---------------------------------------------------------------
     public bool IsActive { get; private set; } = false;
 
-    private int _objectsOnPlate = 0;
+    private System.Collections.Generic.HashSet<Collider> _objectsOnPlate
+        = new System.Collections.Generic.HashSet<Collider>();
+    private bool  _playerHolding  = false;
+    private float _pulseTimer     = 0f;
 
     private void Start()
     {
         SetVisual(false);
+        if (plateOutline != null) plateOutline.enabled = false;
+    }
+
+    private void Update()
+    {
+        if (_playerHolding && !IsActive && plateOutline != null)
+        {
+            // Pulse outline to draw attention
+            _pulseTimer += Time.deltaTime * 3f;
+            plateOutline.OutlineWidth = 4f + Mathf.Sin(_pulseTimer) * 2f;
+        }
+    }
+
+    /// <summary>Called by PressurePlateHeavyBox when player picks up the box.</summary>
+    public void ShowHighlight()
+    {
+        _playerHolding = true;
+        if (plateOutline != null)
+        {
+            plateOutline.OutlineColor = highlightColor;
+            plateOutline.enabled      = true;
+        }
+    }
+
+    /// <summary>Called by PressurePlateHeavyBox when player drops/throws the box.</summary>
+    public void HideHighlight()
+    {
+        _playerHolding = false;
+        _pulseTimer    = 0f;
+        if (plateOutline != null && !IsActive)
+            plateOutline.enabled = false;
     }
 
     // ---------------------------------------------------------------
@@ -58,38 +98,33 @@ public class PressurePlate : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (lockOnActivation && IsActive) return;
-
-        // Only react to rigidbodies with enough mass
-        Rigidbody rb = other.GetComponent<Rigidbody>() ??
-                       other.GetComponentInParent<Rigidbody>();
-
-        if (rb == null || rb.mass < minMass) return;
         if (other.isTrigger) return;
 
-        _objectsOnPlate++;
-        Debug.Log($"[PressurePlate] Object entered: {other.name} " +
-                  $"mass={rb.mass} count={_objectsOnPlate}");
+        Rigidbody rb = other.GetComponent<Rigidbody>() ??
+                       other.GetComponentInParent<Rigidbody>();
+        if (rb == null || rb.mass < minMass) return;
 
-        if (!IsActive)
-            Activate();
+        _objectsOnPlate.Add(other);
+        Debug.Log($"[PressurePlate] Object entered: {other.name} " +
+                  $"mass={rb.mass} count={_objectsOnPlate.Count}");
+
+        if (!IsActive) Activate();
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (lockOnActivation && IsActive) return;
+        if (other.isTrigger) return;
 
         Rigidbody rb = other.GetComponent<Rigidbody>() ??
                        other.GetComponentInParent<Rigidbody>();
-
         if (rb == null || rb.mass < minMass) return;
-        if (other.isTrigger) return;
 
-        _objectsOnPlate = Mathf.Max(0, _objectsOnPlate - 1);
+        _objectsOnPlate.Remove(other);
         Debug.Log($"[PressurePlate] Object left: {other.name} " +
-                  $"count={_objectsOnPlate}");
+                  $"count={_objectsOnPlate.Count}");
 
-        if (_objectsOnPlate == 0 && IsActive)
-            Deactivate();
+        if (_objectsOnPlate.Count == 0 && IsActive) Deactivate();
     }
 
     // ---------------------------------------------------------------
@@ -113,8 +148,15 @@ public class PressurePlate : MonoBehaviour
         IsActive = false;
         SetVisual(false);
         onDeactivated?.Invoke();
-
         Debug.Log("[PressurePlate] Deactivated — object removed.");
+    }
+
+    /// <summary>Resets plate so it can fire objective again after removal.</summary>
+    public void ResetPlate()
+    {
+        _objectsOnPlate.Clear();
+        IsActive = false;
+        SetVisual(false);
     }
 
     // ---------------------------------------------------------------
@@ -123,8 +165,22 @@ public class PressurePlate : MonoBehaviour
 
     private void SetVisual(bool active)
     {
-        if (plateRenderer == null) return;
-        plateRenderer.material.color = active ? activeColor : inactiveColor;
+        if (plateRenderer != null)
+            plateRenderer.material.color = active ? activeColor : inactiveColor;
+
+        if (plateOutline != null)
+        {
+            if (active)
+            {
+                plateOutline.OutlineColor = activeOutlineColor;
+                plateOutline.OutlineWidth = 6f;
+                plateOutline.enabled      = true;
+            }
+            else if (!_playerHolding)
+            {
+                plateOutline.enabled = false;
+            }
+        }
     }
 
     private void OnDrawGizmos()

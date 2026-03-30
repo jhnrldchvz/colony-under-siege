@@ -32,15 +32,22 @@ public class HoldableObject : MonoBehaviour
     public float             fadeSpeed   = 8f;
     public float             labelHeight = 0.8f;
 
-    // ---------------------------------------------------------------
-    private Rigidbody  _rb;
-    private bool       _used      = false;
-    private Camera     _cam;
-    private Transform  _player;
-    private CanvasGroup _cg;
+    [Header("Label Text")]
+    public string hoverText = "[E] Pick up";
+    public string holdText  = "[E] Drop    [RMB] Throw";
 
-    private const string HOVER_TEXT = "[E] Pick up";
-    private const string HOLD_TEXT  = "[E] Drop    [RMB] Throw";
+    [Header("Hint Label")]
+    [Tooltip("Separate TMP text for a contextual hint below the main label")]
+    public TextMeshProUGUI hintText;
+    [Tooltip("Hint shown when player is near — e.g. 'Place on pressure plate'")]
+    public string          hintMessage = "";
+
+    // ---------------------------------------------------------------
+    private Rigidbody   _rb;
+    private bool        _used = false;
+    private Camera      _cam;
+    private Transform   _player;
+    private CanvasGroup _cg;
 
     private void Awake()
     {
@@ -65,10 +72,12 @@ public class HoldableObject : MonoBehaviour
             labelCanvas.gameObject.SetActive(false);
         }
 
-        if (labelText != null) labelText.text = HOVER_TEXT;
+        if (labelText != null) labelText.text = hoverText;
+        if (hintText  != null) hintText.text  = hintMessage;
     }
 
     private bool _isHeld = false;
+    public  bool IsHeld  => _isHeld;
 
     private void Update()
     {
@@ -84,6 +93,10 @@ public class HoldableObject : MonoBehaviour
             bool active = _cg.alpha > 0.01f;
             if (labelCanvas.gameObject.activeSelf != active)
                 labelCanvas.gameObject.SetActive(active);
+
+            // Show hint ONLY while being held
+            if (hintText != null)
+                hintText.gameObject.SetActive(_isHeld);
         }
 
         // Always keep label upright and facing camera
@@ -108,16 +121,22 @@ public class HoldableObject : MonoBehaviour
     public void OnPickedUp()
     {
         _isHeld = true;
-        // Show hold hint as world label on the object itself
-        if (labelText != null) labelText.text = HOLD_TEXT;
+        if (labelText != null) labelText.text = holdText;
         if (_cg != null) _cg.alpha = 1f;
         if (labelCanvas != null) labelCanvas.gameObject.SetActive(true);
+        // Show hint when picked up
+        if (hintText != null)
+        {
+            hintText.text = hintMessage;
+            hintText.gameObject.SetActive(true);
+        }
     }
 
     public void OnDropped()
     {
         _isHeld = false;
-        if (labelText != null) labelText.text = HOVER_TEXT;
+        if (labelText != null) labelText.text = hoverText;
+        if (hintText  != null) hintText.text  = hintMessage;
         if (_cg != null) _cg.alpha = 0f;
         if (labelCanvas != null) labelCanvas.gameObject.SetActive(false);
         if (oneTimeUse) _used = true;

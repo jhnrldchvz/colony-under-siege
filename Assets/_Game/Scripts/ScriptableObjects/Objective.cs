@@ -31,8 +31,12 @@ public class Objective : ScriptableObject
     [Tooltip("For KillCount: kills needed.")]
     public int    requiredCount  = 0;
 
-    [Tooltip("For CollectItem / ActivateSwitch: item or switch ID.")]
+    [Tooltip("For CollectItem / ActivateSwitch / PlateCount: item or switch ID.")]
     public string requiredItemId = "";
+
+    [Tooltip("For ActivateSwitch with plate counting — total plates required. " +
+             "Set to 0 to use standard switch behaviour.")]
+    public int    totalPlates    = 0;
 }
 
 
@@ -43,9 +47,10 @@ public class Objective : ScriptableObject
 /// </summary>
 public class ObjectiveRuntime
 {
-    public Objective Data         { get; }
-    public int       CurrentCount { get; set; } = 0;
-    public bool      IsComplete   { get; set; } = false;
+    public Objective Data           { get; }
+    public int       CurrentCount   { get; set; } = 0;
+    public int       PlateCount     { get; set; } = 0;  // active plates
+    public bool      IsComplete     { get; set; } = false;
 
     public ObjectiveRuntime(Objective data) { Data = data; }
 
@@ -104,6 +109,12 @@ public class ObjectiveRuntime
                 bool has = InventoryManager.Instance != null &&
                            InventoryManager.Instance.HasKeyItem(Data.requiredItemId);
                 return $"• {Data.objectiveText}  [{(has ? "1/1" : "0/1")}]";
+
+            case Objective.ObjectiveType.ActivateSwitch:
+                // Show plate count if totalPlates is set
+                if (Data.totalPlates > 0)
+                    return $"• {Data.objectiveText}  [{PlateCount}/{Data.totalPlates}]";
+                return $"• {Data.objectiveText}";
 
             default:
                 return $"• {Data.objectiveText}";

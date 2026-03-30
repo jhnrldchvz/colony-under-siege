@@ -159,6 +159,43 @@ public class ObjectiveManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Updates the plate count display for a plate puzzle objective.
+    /// Called by PlateDoorController every time a plate activates or deactivates.
+    /// </summary>
+    public void UpdatePlateCount(string switchId, int activePlates)
+    {
+        foreach (ObjectiveRuntime rt in _runtimes)
+        {
+            if (rt.Data.type == Objective.ObjectiveType.ActivateSwitch &&
+                rt.Data.requiredItemId == switchId)
+            {
+                rt.PlateCount = activePlates;
+            }
+        }
+        RefreshHUD();
+    }
+
+    /// <summary>
+    /// Resets an ActivateSwitch objective so it can be completed again.
+    /// Called by PlateDoorController when a plate is deactivated.
+    /// </summary>
+    public void ResetSwitchObjective(string switchId)
+    {
+        foreach (ObjectiveRuntime rt in _runtimes)
+        {
+            if (rt.Data.type == Objective.ObjectiveType.ActivateSwitch &&
+                rt.Data.requiredItemId == switchId)
+            {
+                rt.IsComplete = false;
+                Debug.Log($"[ObjectiveManager] Switch objective reset: '{switchId}'");
+            }
+        }
+
+        _allComplete = false;
+        RefreshHUD();
+    }
+
+    /// <summary>
     /// Called by SwitchInteractable when the player activates a switch.
     /// Matches the switchId against ActivateSwitch objectives.
     /// </summary>

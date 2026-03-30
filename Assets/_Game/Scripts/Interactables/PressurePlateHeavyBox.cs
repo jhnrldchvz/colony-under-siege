@@ -2,27 +2,41 @@ using UnityEngine;
 
 /// <summary>
 /// PressurePlateHeavyBox — marks a Rigidbody as heavy enough to
-/// activate pressure plates. Also shows a proximity label.
+/// activate pressure plates. Any box with this component can activate
+/// any pressure plate — no linking required.
 ///
-/// Setup:
-///   1. Add to any box you want to work as a plate weight
-///   2. Set mass in Rigidbody to at least PressurePlate.minMass
-///   3. Optionally wire a label canvas for pickup hint
-///
-/// This extends HoldableObject functionality — attach both.
+/// When picked up, ALL pressure plates in the scene highlight.
+/// This lets the player know where to bring the box.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class PressurePlateHeavyBox : MonoBehaviour
 {
     [Header("Settings")]
-    [Tooltip("Must match or exceed PressurePlate.minMass to activate it")]
     public float boxMass = 8f;
 
-    [Tooltip("Hint shown to player near this box")]
-    public string hintText = "Heavy container — place on pressure plate";
+    private HoldableObject _holdable;
+    private bool           _wasHeld = false;
 
     private void Awake()
     {
         GetComponent<Rigidbody>().mass = boxMass;
+        _holdable = GetComponent<HoldableObject>();
+    }
+
+    private void Update()
+    {
+        if (_holdable == null) return;
+
+        bool isHeld = _holdable.IsHeld;
+        if (isHeld == _wasHeld) return;
+        _wasHeld = isHeld;
+
+        // Notify ALL pressure plates in the scene — no linking needed
+        PressurePlate[] plates = FindObjectsByType<PressurePlate>(FindObjectsSortMode.None);
+        foreach (PressurePlate plate in plates)
+        {
+            if (isHeld) plate.ShowHighlight();
+            else        plate.HideHighlight();
+        }
     }
 }
