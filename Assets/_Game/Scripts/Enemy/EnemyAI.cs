@@ -421,9 +421,28 @@ public class EnemyAI : MonoBehaviour, IDamageable
         }
         else
         {
-            // Melee attack — direct damage
+            // Melee attack — delay damage to match animation hit frame
+            MutantAnimatorBridge bridge = GetComponent<MutantAnimatorBridge>();
+            float delay = bridge != null ? bridge.attackHitDelay : 0f;
+
+            if (delay > 0f)
+                StartCoroutine(DelayedMeleeDamage(delay));
+            else
+            {
+                _player.TakeDamage(attackDamage);
+                Debug.Log($"[EnemyAI] {gameObject.name} melee hit player for {attackDamage}.");
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator DelayedMeleeDamage(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (_player != null && _player.IsAlive && IsAlive)
+        {
             _player.TakeDamage(attackDamage);
-            Debug.Log($"[EnemyAI] {gameObject.name} melee hit player for {attackDamage}.");
+            Debug.Log($"[EnemyAI] {gameObject.name} delayed melee hit for {attackDamage}.");
         }
     }
 
