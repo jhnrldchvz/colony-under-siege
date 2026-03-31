@@ -65,8 +65,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9023769219070776104, guid: 1bc78016365c4cfd2b3e86d0cd202f27, type: 3}
+      propertyPath: pulseEffect
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 9023769219070776104, guid: 1bc78016365c4cfd2b3e86d0cd202f27, type: 3}
+      propertyPath: activateEffect
+      value: 
+      objectReference: {fileID: 100000, guid: 4ecfa3d3919108f4fbff80d1c4d920a1, type: 3}
+    - target: {fileID: 9023769219070776104, guid: 1bc78016365c4cfd2b3e86d0cd202f27, type: 3}
       propertyPath: distractRadius
-      value: 20
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 9023769219070776104, guid: 1bc78016365c4cfd2b3e86d0cd202f27, type: 3}
       propertyPath: distractDuration

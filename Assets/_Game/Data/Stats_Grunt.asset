@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: Stats_Grunt
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Grunt
-  maxHealth: 20
+  maxHealth: 30
   patrolSpeed: 2
   chaseSpeed: 4
-  detectionRange: 60
+  detectionRange: 20
   fieldOfView: 140
   loseRange: 20
   attackRange: 1.8
-  attackDamage: 30
+  attackDamage: 5
   attackCooldown: 2.5
   isRanged: 0
   projectilePrefab: {fileID: 0}

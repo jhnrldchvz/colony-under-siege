@@ -27,12 +27,12 @@ public class DecoyDevice : MonoBehaviour
     public Light      decoyLight;      // Optional point light — flickers on pulse
 
     // ---------------------------------------------------------------
-    private Rigidbody  _rb;
-    private bool       _landed     = false;
-    private bool       _active     = false;
-    private float      _timer      = 0f;
-    private float      _pulseTimer = 0f;
-
+    private Rigidbody    _rb;
+    private bool         _landed      = false;
+    private bool         _active      = false;
+    private float        _timer       = 0f;
+    private float        _pulseTimer  = 0f;
+    private GameObject   _smokeInstance;
 
     private void Awake()
     {
@@ -60,8 +60,12 @@ public class DecoyDevice : MonoBehaviour
 
         if (activateEffect != null)
         {
-            GameObject fx = Instantiate(activateEffect, transform.position, Quaternion.identity);
-            Destroy(fx, 2f);
+            _smokeInstance = Instantiate(activateEffect, transform.position, Quaternion.identity);
+
+            // Remove auto-destruct so smoke lasts full decoy duration
+            CFX_AutoDestructShuriken autoDestruct =
+                _smokeInstance.GetComponent<CFX_AutoDestructShuriken>();
+            if (autoDestruct != null) Destroy(autoDestruct);
         }
 
         if (decoyLight != null) decoyLight.enabled = true;
@@ -90,6 +94,16 @@ public class DecoyDevice : MonoBehaviour
         {
             _active = false;
             Debug.Log("[Decoy] Expired.");
+
+            // Stop smoke gracefully — let particles fade then destroy
+            if (_smokeInstance != null)
+            {
+                ParticleSystem ps = _smokeInstance.GetComponent<ParticleSystem>();
+                if (ps != null) ps.Stop();
+                Destroy(_smokeInstance, 2f);
+                _smokeInstance = null;
+            }
+
             Destroy(gameObject, 0.5f);
         }
     }
@@ -108,24 +122,27 @@ public class DecoyDevice : MonoBehaviour
         if (decoyLight != null)
             StartCoroutine(FlickerLight());
 
-        // Query EnemyManager — already tracks all living enemies, no scene search needed
-        var enemies    = EnemyManager.Instance?.GetLiveEnemies();
+        // Use FindObjectsByType to get ALL EnemyAI in scene
+        // OverlapSphere misses enemies whose root is outside the sphere
+        // but child colliders are inside — this is more reliable
+        EnemyAI[] allEnemies = FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
         int distracted = 0;
 
-        if (enemies != null)
+        foreach (EnemyAI enemy in allEnemies)
         {
-            float radiusSq = distractRadius * distractRadius;
-            foreach (EnemyAI enemy in enemies)
-            {
-                if (!enemy.IsAlive) continue;
-                if ((enemy.transform.position - transform.position).sqrMagnitude > radiusSq) continue;
+            if (!enemy.IsAlive) continue;
 
-                enemy.DistractTo(transform.position);
-                distracted++;
-            }
+            float dist = Vector3.Distance(transform.position, enemy.transform.position);
+            if (dist > distractRadius) continue;
+
+            enemy.DistractTo(transform.position);
+            distracted++;
+
+            Debug.Log($"[Decoy] Distracted: {enemy.name} at {dist:F1}m");
         }
 
-        Debug.Log($"[Decoy] Pulse — distracted {distracted} enemies within {distractRadius}m");
+        Debug.Log($"[Decoy] Pulse — {distracted}/{allEnemies.Length} enemies distracted " +
+                  $"within {distractRadius}m of decoy at {transform.position}");
 
         TestMetricsCollector.Instance?.RecordFSMTransition(
             "DecoyDevice", "Pulse", $"Distracted {distracted} enemies");

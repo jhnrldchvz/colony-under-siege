@@ -233,7 +233,11 @@ public class WeaponController : MonoBehaviour
     {
         if (Current.decoyPrefab == null || cameraHolder == null) return;
 
-        Vector3 spawnPos = cameraHolder.position + cameraHolder.forward * 0.8f;
+        // Spawn from barrelTip if assigned — otherwise fall back to camera forward
+        Transform spawnPoint = Current.barrelTip != null ? Current.barrelTip : cameraHolder;
+        Vector3   spawnPos   = spawnPoint.position;
+
+        // Throw direction from camera forward so it always matches crosshair
         Vector3 throwDir = Quaternion.AngleAxis(-Current.decoyUpAngle, cameraHolder.right)
                            * cameraHolder.forward;
 
@@ -247,7 +251,7 @@ public class WeaponController : MonoBehaviour
             rb.AddForce(throwDir * Current.decoyThrowForce, ForceMode.VelocityChange);
         }
 
-        Debug.Log($"[WeaponController] Decoy fired.");
+        Debug.Log($"[WeaponController] Decoy fired from {spawnPoint.name}.");
     }
 
     private void PerformRaycast()
