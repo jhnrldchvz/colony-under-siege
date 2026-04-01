@@ -681,7 +681,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a7883bfcd63ca63c845e9c406ca283d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
-  patrolPoints: []
+  patrolRadius: 10
   patrolWaitTime: 2
   sightBlockLayers:
     serializedVersion: 2

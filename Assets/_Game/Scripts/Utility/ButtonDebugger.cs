@@ -27,7 +27,7 @@ public class ButtonDebugger : MonoBehaviour
             Debug.Log($"[EventSystem] Found: {es.gameObject.name} active={es.gameObject.activeInHierarchy}");
 
         // 3 — All Canvases
-        Canvas[] canvases = FindObjectsOfType<Canvas>();
+        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
         Debug.Log($"[Canvas] Found {canvases.Length} canvas(es)");
         foreach (Canvas c in canvases)
         {
@@ -39,7 +39,7 @@ public class ButtonDebugger : MonoBehaviour
         }
 
         // 4 — All active Buttons
-        Button[] buttons = FindObjectsOfType<Button>();
+        Button[] buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
         Debug.Log($"[Buttons] Found {buttons.Length} active button(s)");
         foreach (Button b in buttons)
         {
@@ -51,7 +51,7 @@ public class ButtonDebugger : MonoBehaviour
         }
 
         // 5 — Images with Raycast Target that might block clicks
-        Image[] images = FindObjectsOfType<Image>();
+        Image[] images = FindObjectsByType<Image>(FindObjectsSortMode.None);
         int blockers = 0;
         foreach (Image img in images)
         {

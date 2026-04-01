@@ -64,7 +64,7 @@ public class EnemyManager : MonoBehaviour
     // Private — HashSet for O(1) Contains / Remove
     // ---------------------------------------------------------------
 
-    private readonly HashSet<EnemyAI> _liveEnemies = new HashSet<EnemyAI>();
+    private readonly HashSet<IEnemy> _liveEnemies = new HashSet<IEnemy>();
 
     // ---------------------------------------------------------------
     // Registration — called by EnemyAI.Start() and EnemyAI.Die()
@@ -73,12 +73,12 @@ public class EnemyManager : MonoBehaviour
     /// <summary>
     /// Called by EnemyAI.Start() — adds the enemy to the live set.
     /// </summary>
-    public void RegisterEnemy(EnemyAI enemy)
+    public void RegisterEnemy(IEnemy enemy)
     {
         if (enemy == null || !_liveEnemies.Add(enemy)) return;
 
         TotalEnemies++;
-        Debug.Log($"[EnemyManager] Registered: {enemy.gameObject.name}. " +
+        Debug.Log($"[EnemyManager] Registered: {(enemy as MonoBehaviour)?.name}. " +
                   $"Total: {TotalEnemies}, Alive: {AliveCount}");
     }
 
@@ -86,12 +86,12 @@ public class EnemyManager : MonoBehaviour
     /// Called by EnemyAI.Die() — removes the enemy from the live set
     /// and checks if all enemies are defeated.
     /// </summary>
-    public void DeregisterEnemy(EnemyAI enemy)
+    public void DeregisterEnemy(IEnemy enemy)
     {
         if (enemy == null || !_liveEnemies.Remove(enemy)) return;
 
         KillCount++;
-        Debug.Log($"[EnemyManager] Killed: {enemy.gameObject.name}. " +
+        Debug.Log($"[EnemyManager] Killed: {(enemy as MonoBehaviour)?.name}. " +
                   $"Kills: {KillCount}/{TotalEnemies}, Alive: {AliveCount}");
 
         OnEnemyKilled?.Invoke(KillCount);
@@ -120,7 +120,7 @@ public class EnemyManager : MonoBehaviour
     }
 
     /// <summary>Returns a read-only snapshot of all currently living enemies.</summary>
-    public IReadOnlyCollection<EnemyAI> GetLiveEnemies()
+    public IReadOnlyCollection<IEnemy> GetLiveEnemies()
     {
         return _liveEnemies;
     }

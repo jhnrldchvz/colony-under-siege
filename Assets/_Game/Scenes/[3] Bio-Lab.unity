@@ -10809,6 +10809,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: d51cab76b90f7b9cc800dae27fb4c700, type: 3}
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
+      propertyPath: weapons.Array.data[2].mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[2].type
       value: 4
       objectReference: {fileID: 0}
@@ -10841,6 +10845,10 @@ PrefabInstance:
       value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
+      propertyPath: weapons.Array.data[2].throwForce
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[2].decoyPrefab
       value: 
       objectReference: {fileID: 8228483890976800801, guid: 5b22287b9bfe984909bb1ee5afd1b2af, type: 3}
@@ -10854,7 +10862,7 @@ PrefabInstance:
       objectReference: {fileID: 1862051215}
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[2].muzzleRange
-      value: 3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[0].decoyUpAngle
@@ -10871,6 +10879,10 @@ PrefabInstance:
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[2].startingAmmo
       value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
+      propertyPath: weapons.Array.data[2].throwUpAngle
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[0].muzzleFlashFX
@@ -10899,7 +10911,7 @@ PrefabInstance:
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[2].muzzleFlashFX
       value: 
-      objectReference: {fileID: 100000, guid: 43142f64f71eac0eb971faa675e18147, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[0].decoyThrowForce
       value: 0
@@ -10914,8 +10926,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[2].muzzleIntensity
-      value: 8
+      value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
+      propertyPath: weapons.Array.data[2].projectilePrefab
+      value: 
+      objectReference: {fileID: 8228483890976800801, guid: 5b22287b9bfe984909bb1ee5afd1b2af, type: 3}
     - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: weapons.Array.data[2].muzzleFlashOffset.x
       value: 0.25
@@ -26064,7 +26080,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 0
   m_VoxelSize: 0.16666667
   m_MinRegionArea: 2
-  m_NavMeshData: {fileID: 23800000, guid: c576bbae84cec79a6b96123a4a995011, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: 3297f39e7ca5ead44b6b65c416331f29, type: 2}
   m_BuildHeightMesh: 0
 --- !u!1001 &1384383364
 PrefabInstance:
@@ -36728,7 +36744,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1971773014
 Transform:
   m_ObjectHideFlags: 0

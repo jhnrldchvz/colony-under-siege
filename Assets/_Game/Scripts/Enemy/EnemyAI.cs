@@ -24,7 +24,7 @@ using UnityEngine.AI;
 ///      for animated enemies. Enemies without one work perfectly.
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
-public class EnemyAI : MonoBehaviour, IDamageable
+public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
 {
     // ---------------------------------------------------------------
     // State enum
@@ -402,14 +402,23 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private void PerformAttack()
     {
+        // Trigger muzzle flash on drone scout bridge if present
+        GetComponent<DroneScoutBridge>()?.PlayMuzzleFlash();
+
         _anim?.TriggerAttack();
 
         if (isRanged)
         {
             // Ranged attack — spawn a projectile the player can dodge
-            Vector3 origin      = transform.position + Vector3.up * 1.0f;
-            Vector3 playerEye   = _player.GetCameraPosition();
-            Vector3 direction   = (playerEye - origin).normalized;
+            // Fire from muzzle point if DroneScoutBridge is present
+            DroneScoutBridge bridge = GetComponent<DroneScoutBridge>();
+            Vector3 origin = (bridge != null && bridge.muzzlePoint != null)
+                ? bridge.muzzlePoint.position
+                : transform.position + Vector3.up * 1.0f;
+
+            // Aim at player camera/eye position for accurate shots
+            Vector3 playerEye = _player.GetCameraPosition();
+            Vector3 direction = (playerEye - origin).normalized;
 
             if (projectilePrefab != null)
             {

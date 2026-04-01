@@ -1,82 +1,115 @@
 using UnityEngine;
 
 /// <summary>
-/// EnemyProjectile — moves in a straight line and damages the player on hit.
-/// Attach to a small sphere prefab. The Scout spawns this on each ranged attack.
+/// EnemyProjectile — fired by Scout Drone. Uses raycast for hit detection
+/// instead of trigger/collider overlap — most reliable method in Unity.
 ///
 /// Setup:
-///   1. Create a Sphere → scale (0.15, 0.15, 0.15) → rename EnemyProjectile
-///   2. Add a Rigidbody — Is Kinematic: ON, Use Gravity: OFF
-///   3. Add a Sphere Collider — Is Trigger: ON
-///   4. Attach this script
-///   5. Create a green emissive material → drag onto sphere
-///   6. Save as prefab in Assets/_Game/Prefabs/
-///   7. Assign to Stats_Scout → Projectile Prefab slot (once EnemyStats is updated)
+///   1. Create Sphere → scale (0.12, 0.12, 0.12)
+///   2. Add Rigidbody — Is Kinematic: ON, Use Gravity: OFF
+///   3. NO Collider needed — raycast handles detection
+///   4. Assign impactEffect (War FX hit spark prefab)
+///   5. Save as prefab → assign to EnemyStats.projectilePrefab
 /// </summary>
 public class EnemyProjectile : MonoBehaviour
 {
-    [Header("Settings")]
-    public float speed       = 12f;   // Units per second
-    public float maxLifetime = 4f;    // Destroys after this many seconds
-    public int   damage      = 12;    // Set by the firing enemy at spawn time
+    [Header("Movement")]
+    public float speed       = 16f;
+    public float maxLifetime = 5f;
 
+    [Header("Combat")]
+    public int   damage      = 12;
+
+    [Header("Effects")]
+    public GameObject impactEffect;
+    public Light      projectileLight;
+
+    // ---------------------------------------------------------------
     private Vector3    _direction;
-    private float      _lifetime = 0f;
-    private GameObject _owner;    // The enemy that fired this — ignored on collision
+    private float      _lifetime  = 0f;
+    private GameObject _owner;
+    private bool       _dead      = false;
 
     // ---------------------------------------------------------------
-    // Called by EnemyAI after Instantiate to set direction and damage
-    // ---------------------------------------------------------------
-
     public void Init(Vector3 direction, int dmg, GameObject owner = null)
     {
         _direction = direction.normalized;
         damage     = dmg;
         _owner     = owner;
-    }
 
-    // ---------------------------------------------------------------
-    // Lifecycle
-    // ---------------------------------------------------------------
+        if (direction != Vector3.zero)
+            transform.rotation = Quaternion.LookRotation(direction);
+    }
 
     private void Update()
     {
-        // Move forward each frame
-        transform.position += _direction * speed * Time.deltaTime;
+        if (_dead) return;
 
-        // Self-destruct after max lifetime
-        _lifetime += Time.deltaTime;
-        if (_lifetime >= maxLifetime)
-            Destroy(gameObject);
-    }
+        float stepDist = speed * Time.deltaTime;
 
-    private void OnTriggerEnter(Collider other)
-    {
-        // Ignore the enemy that fired this projectile
-        if (_owner != null && (other.gameObject == _owner ||
-            other.transform.IsChildOf(_owner.transform))) return;
-
-        // Ignore all enemies — only hurts the player
-        if (other.GetComponent<EnemyAI>() != null)             return;
-        if (other.GetComponentInParent<EnemyAI>() != null)     return;
-
-        // Ignore triggers (pickups, canvases, etc.)
-        if (other.isTrigger)                                    return;
-
-        // IDamageable — hits player or any other damageable target
-        IDamageable target = other.GetComponent<IDamageable>() ??
-                             other.GetComponentInParent<IDamageable>();
-
-        if (target != null && target.IsAlive)
+        // Raycast ahead each frame — catches any collider in path
+        if (Physics.Raycast(transform.position, _direction, out RaycastHit hit, stepDist + 0.1f))
         {
-            target.TakeDamage(damage);
-            Debug.Log($"[EnemyProjectile] Hit '{other.gameObject.name}' for {damage} damage.");
-            Destroy(gameObject);
+            // Ignore owner and its children
+            if (_owner != null && (hit.collider.gameObject == _owner ||
+                hit.collider.transform.IsChildOf(_owner.transform)))
+            {
+                MoveStep(stepDist);
+                return;
+            }
+
+            // Ignore other enemies
+            if (hit.collider.GetComponent<IEnemy>() != null ||
+                hit.collider.GetComponentInParent<IEnemy>() != null)
+            {
+                MoveStep(stepDist);
+                return;
+            }
+
+            // Walk hierarchy for IDamageable — handles player, crates, any damageable
+            IDamageable target = hit.collider.GetComponent<IDamageable>()
+                              ?? hit.collider.GetComponentInParent<IDamageable>();
+
+            if (target != null && target.IsAlive)
+            {
+                target.TakeDamage(damage);
+                Debug.Log($"[DroneProjectile] Hit '{hit.collider.name}' for {damage} dmg.");
+            }
+            else
+            {
+                Debug.Log($"[DroneProjectile] Hit wall: {hit.collider.name}");
+            }
+
+            SpawnImpact(hit.point);
+            Kill();
             return;
         }
 
-        // Hit a wall or solid obstacle
-        Debug.Log($"[EnemyProjectile] Blocked by: {other.gameObject.name}");
+        MoveStep(stepDist);
+
+        _lifetime += Time.deltaTime;
+        if (_lifetime >= maxLifetime)
+        {
+            SpawnImpact(transform.position);
+            Kill();
+        }
+    }
+
+    private void MoveStep(float dist)
+    {
+        transform.position += _direction * dist;
+    }
+
+    private void SpawnImpact(Vector3 pos)
+    {
+        if (impactEffect == null) return;
+        GameObject fx = Instantiate(impactEffect, pos, Quaternion.identity);
+        Destroy(fx, 2f);
+    }
+
+    private void Kill()
+    {
+        _dead = true;
         Destroy(gameObject);
     }
 }
