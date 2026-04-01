@@ -212,6 +212,10 @@ public class UIManager : MonoBehaviour
             InventoryManager.Instance.OnKeyItemAdded += OnKeyItemCollected;
         }
 
+        // Subscribe to ObjectiveManager — drives objective HUD text
+        if (ObjectiveManager.Instance != null)
+            ObjectiveManager.Instance.OnObjectiveTextChanged += UpdateObjectiveText;
+
         // Cache PlayerController — used for sensitivity and health events
         _player = FindFirstObjectByType<PlayerController>();
         if (_player != null)
@@ -405,6 +409,9 @@ public class UIManager : MonoBehaviour
             InventoryManager.Instance.OnAmmoChanged  -= OnAmmoChanged;
             InventoryManager.Instance.OnKeyItemAdded -= OnKeyItemCollected;
         }
+
+        if (ObjectiveManager.Instance != null)
+            ObjectiveManager.Instance.OnObjectiveTextChanged -= UpdateObjectiveText;
     }
 
     // ---------------------------------------------------------------

@@ -55,6 +55,9 @@ public class ObjectiveManager : MonoBehaviour
     /// <summary>Fired when every objective in stageObjectives is complete.</summary>
     public event Action OnAllObjectivesComplete;
 
+    /// <summary>Fired when objective HUD text changes. UIManager subscribes to this.</summary>
+    public event Action<string> OnObjectiveTextChanged;
+
     // ---------------------------------------------------------------
     // Private — runtime wrappers (one per Objective SO, per session)
     // ---------------------------------------------------------------
@@ -282,13 +285,11 @@ public class ObjectiveManager : MonoBehaviour
     /// </summary>
     private void RefreshHUD()
     {
-        if (UIManager.Instance == null) return;
-
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
 
         foreach (ObjectiveRuntime rt in _runtimes)
             sb.AppendLine(rt.GetDisplayText());
 
-        UIManager.Instance.UpdateObjectiveText(sb.ToString().TrimEnd());
+        OnObjectiveTextChanged?.Invoke(sb.ToString().TrimEnd());
     }
 }

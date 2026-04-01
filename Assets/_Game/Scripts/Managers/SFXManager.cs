@@ -19,6 +19,7 @@ using UnityEngine;
 ///   2. Attach this script.
 ///   3. Assign clips in Inspector.
 /// </summary>
+[DefaultExecutionOrder(-50)]
 public class SFXManager : MonoBehaviour
 {
     public static SFXManager Instance { get; private set; }

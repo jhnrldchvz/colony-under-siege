@@ -20,6 +20,8 @@ using UnityEngine.AI;
 ///      Patrol Radius controls the wander area around the spawn point.
 ///   4. Set the Player tag to "Player" in Edit → Project Settings → Tags.
 ///   5. Assign an EnemyStats preset — all combat/movement stats come from there.
+///   6. (Optional) Add an IEnemyAnimator component (e.g. MutantAnimatorBridge)
+///      for animated enemies. Enemies without one work perfectly.
 /// </summary>
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyAI : MonoBehaviour, IDamageable
@@ -116,7 +118,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
     // ---------------------------------------------------------------
 
     private NavMeshAgent     _agent;
-    private Animator         _animator;
+    private IEnemyAnimator   _anim;
     private PlayerController _player;
 
     // ---------------------------------------------------------------
@@ -139,21 +141,13 @@ public class EnemyAI : MonoBehaviour, IDamageable
     private int     _currentHealth;
 
     // ---------------------------------------------------------------
-    // Animator parameter hashes — cached for performance
-    // ---------------------------------------------------------------
-
-    private static readonly int AnimSpeed  = Animator.StringToHash("Speed");
-    private static readonly int AnimAttack = Animator.StringToHash("Attack");
-    private static readonly int AnimDie    = Animator.StringToHash("Die");
-
-    // ---------------------------------------------------------------
     // Lifecycle
     // ---------------------------------------------------------------
 
     private void Awake()
     {
         _agent         = GetComponent<NavMeshAgent>();
-        _animator      = GetComponent<Animator>();
+        _anim          = GetComponent<IEnemyAnimator>();
         _currentHealth = maxHealth;
 
         if (statPreset != null)
@@ -214,7 +208,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
             return;
         }
 
-        SetAnimatorSpeed(_agent.velocity.magnitude);
+        _anim?.SetSpeed(_agent.velocity.magnitude);
 
         if (_isWaiting)
         {
@@ -351,7 +345,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
             }
         }
 
-        SetAnimatorSpeed(_agent.velocity.magnitude);
+        _anim?.SetSpeed(_agent.velocity.magnitude);
     }
 
     // ---------------------------------------------------------------
@@ -376,7 +370,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         }
 
         FaceTarget(_player.transform.position);
-        SetAnimatorSpeed(0f);
+        _anim?.SetSpeed(0f);
 
         if (isRanged)
         {
@@ -408,8 +402,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private void PerformAttack()
     {
-        if (_animator != null)
-            _animator.SetTrigger(AnimAttack);
+        _anim?.TriggerAttack();
 
         if (isRanged)
         {
@@ -479,7 +472,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
             return;
         }
 
-        SetAnimatorSpeed(_agent.velocity.magnitude);
+        _anim?.SetSpeed(_agent.velocity.magnitude);
 
         if (!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
         {
@@ -667,8 +660,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         SetState(EnemyState.Dead);
         _agent.enabled = false;
 
-        if (_animator != null)
-            _animator.SetTrigger(AnimDie);
+        _anim?.TriggerDie();
 
         EnemyManager.Instance?.DeregisterEnemy(this);
 
@@ -780,7 +772,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
     }
 
     // ---------------------------------------------------------------
-    // Utility — movement / animation helpers
+    // Utility — movement helpers
     // ---------------------------------------------------------------
 
     private void FaceTarget(Vector3 targetPosition)
@@ -793,12 +785,6 @@ public class EnemyAI : MonoBehaviour, IDamageable
                 transform.rotation,
                 Quaternion.LookRotation(direction),
                 Time.deltaTime * 8f);
-    }
-
-    private void SetAnimatorSpeed(float speed)
-    {
-        if (_animator != null)
-            _animator.SetFloat(AnimSpeed, speed);
     }
 
     // ---------------------------------------------------------------

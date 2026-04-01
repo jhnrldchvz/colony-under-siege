@@ -79,6 +79,9 @@ public class HoldableObject : MonoBehaviour
     private bool _isHeld = false;
     public  bool IsHeld  => _isHeld;
 
+    /// <summary>Fired when hold state changes. Passes true when picked up, false when dropped/thrown.</summary>
+    public event System.Action<bool> OnHoldStateChanged;
+
     private void Update()
     {
         if (_player == null) return;
@@ -121,6 +124,7 @@ public class HoldableObject : MonoBehaviour
     public void OnPickedUp()
     {
         _isHeld = true;
+        OnHoldStateChanged?.Invoke(true);
         if (labelText != null) labelText.text = holdText;
         if (_cg != null) _cg.alpha = 1f;
         if (labelCanvas != null) labelCanvas.gameObject.SetActive(true);
@@ -135,6 +139,7 @@ public class HoldableObject : MonoBehaviour
     public void OnDropped()
     {
         _isHeld = false;
+        OnHoldStateChanged?.Invoke(false);
         if (labelText != null) labelText.text = hoverText;
         if (hintText  != null) hintText.text  = hintMessage;
         if (_cg != null) _cg.alpha = 0f;
@@ -145,6 +150,7 @@ public class HoldableObject : MonoBehaviour
     public void OnThrown()
     {
         _isHeld = false;
+        OnHoldStateChanged?.Invoke(false);
         if (labelCanvas != null) labelCanvas.gameObject.SetActive(false);
         if (oneTimeUse) _used = true;
     }

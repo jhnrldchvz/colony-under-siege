@@ -50,7 +50,7 @@ public class ButtonBridge : MonoBehaviour
     {
         Debug.Log("[ButtonBridge] Next Level");
         Time.timeScale = 1f;
-        LevelManager lm = FindObjectOfType<LevelManager>();
+        LevelManager lm = FindFirstObjectByType<LevelManager>();
         lm?.LoadNextLevel();
     }
 

@@ -15,7 +15,6 @@ public class PressurePlateHeavyBox : MonoBehaviour
     public float boxMass = 8f;
 
     private HoldableObject _holdable;
-    private bool           _wasHeld = false;
 
     private void Awake()
     {
@@ -23,14 +22,20 @@ public class PressurePlateHeavyBox : MonoBehaviour
         _holdable = GetComponent<HoldableObject>();
     }
 
-    private void Update()
+    private void OnEnable()
     {
-        if (_holdable == null) return;
+        if (_holdable != null)
+            _holdable.OnHoldStateChanged += OnHoldStateChanged;
+    }
 
-        bool isHeld = _holdable.IsHeld;
-        if (isHeld == _wasHeld) return;
-        _wasHeld = isHeld;
+    private void OnDisable()
+    {
+        if (_holdable != null)
+            _holdable.OnHoldStateChanged -= OnHoldStateChanged;
+    }
 
+    private void OnHoldStateChanged(bool isHeld)
+    {
         // Notify ALL pressure plates in the scene — no linking needed
         PressurePlate[] plates = FindObjectsByType<PressurePlate>(FindObjectsSortMode.None);
         foreach (PressurePlate plate in plates)

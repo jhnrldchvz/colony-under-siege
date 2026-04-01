@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// MutantAnimatorBridge — maps EnemyAI FSM states to Mutant animations.
-/// Attach alongside EnemyAI on the Mutant prefab root.
+/// MutantAnimatorBridge — implements IEnemyAnimator for Mutant enemies.
+/// Maps EnemyAI animation calls to Mutant Animator parameters.
 ///
 /// Animator Controller needs these parameters:
 ///   Speed    (Float)   — controls Walk/Run blend
@@ -13,10 +13,10 @@ using UnityEngine;
 /// Setup:
 ///   1. Attach to Mutant root GameObject (same as EnemyAI)
 ///   2. Assign the Animator component in Inspector
-///   3. The bridge reads EnemyAI.CurrentState each frame
+///   3. EnemyAI calls interface methods automatically
 /// </summary>
 [RequireComponent(typeof(EnemyAI))]
-public class MutantAnimatorBridge : MonoBehaviour
+public class MutantAnimatorBridge : MonoBehaviour, IEnemyAnimator
 {
     [Header("References")]
     public Animator animator;
@@ -42,14 +42,11 @@ public class MutantAnimatorBridge : MonoBehaviour
     public float attackHitDelay  = 0.35f;
 
     // ---------------------------------------------------------------
-    private EnemyAI              _ai;
-    private EnemyAI.EnemyState   _lastState;
-    private UnityEngine.AI.NavMeshAgent _agent;
+    private EnemyAI _ai;
 
     private void Awake()
     {
-        _ai    = GetComponent<EnemyAI>();
-        _agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+        _ai = GetComponent<EnemyAI>();
 
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
@@ -59,36 +56,36 @@ public class MutantAnimatorBridge : MonoBehaviour
     {
         if (_ai == null || animator == null) return;
 
-        EnemyAI.EnemyState state = _ai.CurrentState;
-
-        // Update speed float — drives Walk vs Run blend
-        float speed = _agent != null ? _agent.velocity.magnitude : 0f;
-        animator.SetFloat(paramSpeed, speed, 0.1f, Time.deltaTime);
-
-        // Update IsChasing bool
-        bool chasing = state == EnemyAI.EnemyState.Chase;
+        // Update IsChasing bool — drives Walk/Run blend tree
+        bool chasing = _ai.CurrentState == EnemyAI.EnemyState.Chase;
         animator.SetBool(paramIsChasing, chasing);
+    }
 
-        // Detect state transitions
-        if (state == _lastState) return;
+    // ---------------------------------------------------------------
+    // IEnemyAnimator implementation
+    // ---------------------------------------------------------------
 
-        EnemyAI.EnemyState prev = _lastState;
-        _lastState = state;
+    public void SetSpeed(float speed)
+    {
+        if (animator != null)
+            animator.SetFloat(paramSpeed, speed, 0.1f, Time.deltaTime);
+    }
 
-        switch (state)
-        {
-            case EnemyAI.EnemyState.Attack:
-                // Randomly pick attack variation
-                if (Random.value < attack2Chance && HasParam(paramAttack2))
-                    animator.SetTrigger(paramAttack2);
-                else
-                    animator.SetTrigger(paramAttack);
-                break;
+    public void TriggerAttack()
+    {
+        if (animator == null) return;
 
-            case EnemyAI.EnemyState.Dead:
-                animator.SetTrigger(paramDie);
-                break;
-        }
+        // Randomly pick attack variation
+        if (Random.value < attack2Chance && HasParam(paramAttack2))
+            animator.SetTrigger(paramAttack2);
+        else
+            animator.SetTrigger(paramAttack);
+    }
+
+    public void TriggerDie()
+    {
+        if (animator != null)
+            animator.SetTrigger(paramDie);
     }
 
     // ---------------------------------------------------------------

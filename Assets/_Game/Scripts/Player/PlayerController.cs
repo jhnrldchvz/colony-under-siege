@@ -55,9 +55,6 @@ public class PlayerController : MonoBehaviour
         CurrentHealth = maxHealth;
 
         OnMaxHealthSet?.Invoke(maxHealth);
-        // Keep direct call as fallback if UIManager subscribes late
-        if (UIManager.Instance != null)
-            UIManager.Instance.SetMaxHealth(maxHealth);
 
         // Wait 2 frames before locking cursor — fixes post-restart input focus
         StartCoroutine(InitCursorAfterLoad());
@@ -194,7 +191,6 @@ public class PlayerController : MonoBehaviour
         if (!IsAlive) return;
         CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
         OnHealthChanged?.Invoke(CurrentHealth);
-        if (UIManager.Instance != null) UIManager.Instance.UpdateHealth(CurrentHealth);
 
         // Player hurt sound
         SFXManager.Instance?.PlayPlayerHurt();
@@ -216,7 +212,6 @@ public class PlayerController : MonoBehaviour
         if (!IsAlive) return;
         CurrentHealth = Mathf.Min(maxHealth, CurrentHealth + amount);
         OnHealthChanged?.Invoke(CurrentHealth);
-        if (UIManager.Instance != null) UIManager.Instance.UpdateHealth(CurrentHealth);
         Debug.Log($"[Player] Healed {amount}. HP:{CurrentHealth}/{maxHealth}");
     }
 

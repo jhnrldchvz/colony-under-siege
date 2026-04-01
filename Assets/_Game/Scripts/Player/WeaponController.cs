@@ -7,6 +7,8 @@ public class WeaponController : MonoBehaviour
     // ---------------------------------------------------------------
     // Weapon Configuration
     // ---------------------------------------------------------------
+    public enum WeaponMode { Raycast, Launcher }
+
     [System.Serializable]
     public class WeaponConfig
     {
@@ -15,31 +17,34 @@ public class WeaponController : MonoBehaviour
         public Sprite icon;
 
         [Header("Model")]
-        public GameObject modelObject;           // Weapon model (child of CameraHolder)
-        public Transform barrelTip;              // Empty GameObject at the exact muzzle tip
+        public GameObject modelObject;
+        public Transform barrelTip;
 
-        [Header("Muzzle Flash")]
-        public GameObject muzzleFlashFX;         // War FX muzzle prefab
-        public Vector3 muzzleFlashOffset = Vector3.zero; // Offset from barrelTip (fixes pistol distance issue)
+        [Header("Mode")]
+        [Tooltip("Raycast = hitscan (Rifle/Pistol). Launcher = fires a physics projectile (Decoy).")]
+        public WeaponMode mode = WeaponMode.Raycast;
 
-        [Header("Legacy Light Fallback (if no FX)")]
-        public Color muzzleColor = new Color(1f, 0.85f, 0.4f);
-        public float muzzleIntensity = 8f;
-        public float muzzleRange = 3f;
+        [Header("Stats — shared")]
+        public int   startingAmmo = 90;
+        public float fireRate     = 0.1f;
+        public float reloadTime   = 1.8f;
 
-        [Header("Stats")]
-        public int damage = 5;
-        public float range = 50f;
-        public float fireRate = 0.1f;
-        public float reloadTime = 1.8f;
-        public int startingAmmo = 90;
+        [Header("Stats — Raycast only")]
+        public int   damage = 5;
+        public float range  = 50f;
 
-        [Header("Decoy Launcher (leave empty for normal weapons)")]
-        [Tooltip("If set — this weapon fires decoy grenades instead of raycasting")]
-        public GameObject decoyPrefab;
-        public float      decoyThrowForce  = 15f;
-        public float      decoyUpAngle     = 20f;
-        public bool       isDecoyLauncher  => decoyPrefab != null;
+        [Header("Muzzle Flash — Raycast only")]
+        public GameObject muzzleFlashFX;
+        public Vector3    muzzleFlashOffset  = Vector3.zero;
+        public Color      muzzleColor        = new Color(1f, 0.85f, 0.4f);
+        public float      muzzleIntensity    = 8f;
+        public float      muzzleRange        = 3f;
+
+        [Header("Launcher only")]
+        [Tooltip("Prefab to throw (e.g. DecoyDevice)")]
+        public GameObject projectilePrefab;
+        public float      throwForce   = 15f;
+        public float      throwUpAngle = 20f;
     }
 
     [Header("Weapon Configs")]
@@ -49,23 +54,25 @@ public class WeaponController : MonoBehaviour
         {
             type = InventoryManager.WeaponType.Rifle,
             displayName = "Rifle",
+            mode = WeaponMode.Raycast,
             damage = 5,
             range = 50f,
             fireRate = 0.1f,
             reloadTime = 1.8f,
             startingAmmo = 90,
-            muzzleFlashOffset = new Vector3(0f, 0f, 0.05f)   // Adjust if needed
+            muzzleFlashOffset = new Vector3(0f, 0f, 0.05f)
         },
         new WeaponConfig
         {
             type = InventoryManager.WeaponType.Pistol,
             displayName = "Pistol",
+            mode = WeaponMode.Raycast,
             damage = 2,
             range = 30f,
             fireRate = 0.25f,
             reloadTime = 1.2f,
             startingAmmo = 36,
-            muzzleFlashOffset = new Vector3(0f, 0f, 0.08f)   // ← Change this Z value to fix pistol muzzle flash distance
+            muzzleFlashOffset = new Vector3(0f, 0f, 0.08f)
         }
     };
 
@@ -76,18 +83,17 @@ public class WeaponController : MonoBehaviour
 
     [Header("Shared Effects")]
     public GameObject hitEffectPrefab;
-    public float muzzleFlashDuration = 0.05f;
 
     // ---------------------------------------------------------------
     // Private runtime state
     // ---------------------------------------------------------------
-    private int _currentWeaponIndex = 0;
-    private float _nextFireTime = 0f;
-    private bool _isReloading = false;
-    private bool _fireHeld = false;
-    private bool _weaponHidden = false;
+    private int  _currentWeaponIndex = 0;
+    private float _nextFireTime      = 0f;
+    private bool  _isReloading       = false;
+    private bool  _fireHeld          = false;
+    private bool  _weaponHidden      = false;
 
-    private GrabController _grab;
+    private GrabController      _grab;
     private InputSystem_Actions _inputs;
 
     // ---------------------------------------------------------------
@@ -117,8 +123,6 @@ public class WeaponController : MonoBehaviour
 
         if (cameraHolder == null)
             Debug.LogError("[WeaponController] No cameraHolder found!");
-        else
-            Debug.Log($"[WeaponController] Using cameraHolder: {cameraHolder.name}");
 
         _grab = GetComponent<GrabController>();
     }
@@ -126,8 +130,8 @@ public class WeaponController : MonoBehaviour
     private void OnEnable()
     {
         _inputs.Player.Enable();
-        _inputs.Player.Fire.performed += ctx => _fireHeld = true;
-        _inputs.Player.Fire.canceled += ctx => _fireHeld = false;
+        _inputs.Player.Fire.performed  += ctx => _fireHeld = true;
+        _inputs.Player.Fire.canceled   += ctx => _fireHeld = false;
         _inputs.Player.Reload.performed += ctx => TryReload();
     }
 
@@ -142,7 +146,7 @@ public class WeaponController : MonoBehaviour
         {
             foreach (WeaponConfig cfg in weapons)
             {
-                bool magEmpty = InventoryManager.Instance.GetCurrentAmmo(cfg.type) == 0;
+                bool magEmpty     = InventoryManager.Instance.GetCurrentAmmo(cfg.type) == 0;
                 bool reserveEmpty = InventoryManager.Instance.GetReserveAmmo(cfg.type) == 0;
 
                 if (magEmpty && reserveEmpty)
@@ -160,12 +164,10 @@ public class WeaponController : MonoBehaviour
         if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
         if (playerController != null && !playerController.IsAlive) return;
 
-        // Weapon switching — supports any number of weapons via number keys
         if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchToIndex(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchToIndex(1);
         if (Input.GetKeyDown(KeyCode.Alpha3)) SwitchToIndex(2);
 
-        // Hide weapon while holding an object
         bool isHolding = _grab != null && _grab.IsHolding;
         if (isHolding != _weaponHidden)
         {
@@ -173,14 +175,12 @@ public class WeaponController : MonoBehaviour
             SetWeaponVisible(!isHolding);
         }
 
-        if (isHolding) return;
-
+        if (isHolding)   return;
         if (_isReloading) return;
 
         if (_fireHeld && Time.time >= _nextFireTime)
             TryFire();
 
-        // Auto-reload when empty
         if (InventoryManager.Instance != null &&
             !InventoryManager.Instance.HasAmmo(Current.type) &&
             InventoryManager.Instance.CanReload(Current.type))
@@ -208,10 +208,9 @@ public class WeaponController : MonoBehaviour
 
         _nextFireTime = Time.time + Current.fireRate;
 
-        // Decoy launcher fires a projectile instead of raycasting
-        if (Current.isDecoyLauncher)
+        if (Current.mode == WeaponMode.Launcher)
         {
-            FireDecoy();
+            FireLauncher();
         }
         else
         {
@@ -229,29 +228,27 @@ public class WeaponController : MonoBehaviour
                   $"Ammo: {InventoryManager.Instance.GetCurrentAmmo(Current.type)}");
     }
 
-    private void FireDecoy()
+    private void FireLauncher()
     {
-        if (Current.decoyPrefab == null || cameraHolder == null) return;
+        if (Current.projectilePrefab == null || cameraHolder == null) return;
 
-        // Spawn from barrelTip if assigned — otherwise fall back to camera forward
         Transform spawnPoint = Current.barrelTip != null ? Current.barrelTip : cameraHolder;
         Vector3   spawnPos   = spawnPoint.position;
 
-        // Throw direction from camera forward so it always matches crosshair
-        Vector3 throwDir = Quaternion.AngleAxis(-Current.decoyUpAngle, cameraHolder.right)
+        Vector3 throwDir = Quaternion.AngleAxis(-Current.throwUpAngle, cameraHolder.right)
                            * cameraHolder.forward;
 
-        GameObject decoy = Instantiate(Current.decoyPrefab, spawnPos, Quaternion.identity);
-        Rigidbody  rb    = decoy.GetComponent<Rigidbody>();
+        GameObject proj = Instantiate(Current.projectilePrefab, spawnPos, Quaternion.identity);
+        Rigidbody  rb   = proj.GetComponent<Rigidbody>();
 
         if (rb != null)
         {
             rb.isKinematic = false;
             rb.useGravity  = true;
-            rb.AddForce(throwDir * Current.decoyThrowForce, ForceMode.VelocityChange);
+            rb.AddForce(throwDir * Current.throwForce, ForceMode.VelocityChange);
         }
 
-        Debug.Log($"[WeaponController] Decoy fired from {spawnPoint.name}.");
+        Debug.Log($"[WeaponController] Launched {Current.projectilePrefab.name} from {spawnPoint.name}.");
     }
 
     private void PerformRaycast()
@@ -285,28 +282,20 @@ public class WeaponController : MonoBehaviour
     }
 
     // ---------------------------------------------------------------
-    // Muzzle Flash (Now Modular)
+    // Muzzle Flash
     // ---------------------------------------------------------------
     private void SpawnMuzzleFlash()
     {
         if (cameraHolder == null) return;
 
         Transform spawnPoint = Current.barrelTip != null ? Current.barrelTip : cameraHolder;
-
-        Vector3 spawnPos = spawnPoint.position + spawnPoint.TransformDirection(Current.muzzleFlashOffset);
-        Quaternion spawnRot = spawnPoint.rotation;
+        Vector3    spawnPos  = spawnPoint.position + spawnPoint.TransformDirection(Current.muzzleFlashOffset);
 
         if (Current.muzzleFlashFX != null)
         {
-            GameObject fx = Instantiate(Current.muzzleFlashFX, spawnPos, spawnRot);
-
-            // Parent to barrel so it follows movement and rotation
+            GameObject fx = Instantiate(Current.muzzleFlashFX, spawnPos, spawnPoint.rotation);
             fx.transform.SetParent(spawnPoint, true);
-
-            // Optional: force local offset if prefab has its own positioning
-            // fx.transform.localPosition = Current.muzzleFlashOffset;
-
-            Destroy(fx, 0.15f); // Safety destroy for War FX
+            Destroy(fx, 0.15f);
         }
         else
         {
@@ -319,12 +308,12 @@ public class WeaponController : MonoBehaviour
         GameObject lightObj = new GameObject("MuzzleFlashLight");
         lightObj.transform.position = pos;
 
-        Light lt = lightObj.AddComponent<Light>();
-        lt.type = LightType.Point;
-        lt.color = Current.muzzleColor;
-        lt.range = Current.muzzleRange;
-        lt.shadows = LightShadows.None;
-        lt.intensity = Current.muzzleIntensity;
+        Light lt        = lightObj.AddComponent<Light>();
+        lt.type         = LightType.Point;
+        lt.color        = Current.muzzleColor;
+        lt.range        = Current.muzzleRange;
+        lt.shadows      = LightShadows.None;
+        lt.intensity    = Current.muzzleIntensity;
 
         yield return null;
         lt.intensity *= 0.4f;
@@ -337,7 +326,6 @@ public class WeaponController : MonoBehaviour
     private void SpawnHitEffect(Vector3 position, Vector3 normal)
     {
         if (hitEffectPrefab == null) return;
-
         GameObject effect = Instantiate(hitEffectPrefab, position, Quaternion.LookRotation(normal));
         Destroy(effect, 1f);
     }
@@ -349,7 +337,6 @@ public class WeaponController : MonoBehaviour
     {
         if (_isReloading || InventoryManager.Instance == null) return;
         if (!InventoryManager.Instance.CanReload(Current.type)) return;
-
         StartCoroutine(ReloadCoroutine());
     }
 
@@ -385,7 +372,6 @@ public class WeaponController : MonoBehaviour
         _currentWeaponIndex = index;
         RefreshHUD();
         ShowActiveModel();
-
         Debug.Log($"[WeaponController] Switched to: {Current.displayName}");
     }
 
@@ -404,7 +390,6 @@ public class WeaponController : MonoBehaviour
     // ---------------------------------------------------------------
     // Model Visibility
     // ---------------------------------------------------------------
-
     private void SetWeaponVisible(bool visible)
     {
         for (int i = 0; i < weapons.Length; i++)
@@ -442,7 +427,7 @@ public class WeaponController : MonoBehaviour
     // ---------------------------------------------------------------
     private void OnDrawGizmosSelected()
     {
-        if (cameraHolder == null) return;
+        if (cameraHolder == null || Current.mode == WeaponMode.Launcher) return;
 
         Gizmos.color = Color.red;
         Gizmos.DrawRay(cameraHolder.position, cameraHolder.forward * Current.range);
