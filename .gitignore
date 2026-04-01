@@ -129,3 +129,13 @@ Assets/Drone_Guard/
 Assets/Drone_Guard.meta
 Assets/SciFiProps/
 Assets/SciFiProps.meta
+
+# Unity URP auto-generated settings
+Assets/DefaultVolumeProfile.asset
+Assets/DefaultVolumeProfile.asset.meta
+Assets/UniversalRenderPipelineGlobalSettings.asset
+Assets/UniversalRenderPipelineGlobalSettings.asset.meta
+
+# Asset packs
+Assets/Orbs/
+Assets/Orbs.meta
