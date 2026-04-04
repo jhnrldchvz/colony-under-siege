@@ -370,7 +370,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AmmoPickup
   weaponType: 0
-  ammoAmount: 15
+  ammoAmount: 45
   displayName: Pistol Ammo
   rotateSpeed: 90
   floatAmplitude: 0.15
