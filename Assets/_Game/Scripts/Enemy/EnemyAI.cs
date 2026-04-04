@@ -410,15 +410,9 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
         if (isRanged)
         {
             // Ranged attack — spawn a projectile the player can dodge
-            // Fire from muzzle point if DroneScoutBridge is present
-            DroneScoutBridge bridge = GetComponent<DroneScoutBridge>();
-            Vector3 origin = (bridge != null && bridge.muzzlePoint != null)
-                ? bridge.muzzlePoint.position
-                : transform.position + Vector3.up * 1.0f;
-
-            // Aim at player camera/eye position for accurate shots
-            Vector3 playerEye = _player.GetCameraPosition();
-            Vector3 direction = (playerEye - origin).normalized;
+            Vector3 origin      = transform.position + Vector3.up * 0.15f;
+            Vector3 playerEye   = _player.GetCameraPosition();
+            Vector3 direction   = (playerEye - origin).normalized;
 
             if (projectilePrefab != null)
             {
@@ -563,6 +557,17 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
     // ---------------------------------------------------------------
     // Health — taking damage
     // ---------------------------------------------------------------
+
+    /// <summary>Called by AICoreManager to restore HP while core is active.</summary>
+    public void Heal(int amount)
+    {
+        if (!IsAlive) return;
+        _currentHealth = Mathf.Min(_currentHealth + amount, maxHealth);
+
+        healthBar?.UpdateHealth(_currentHealth, maxHealth);
+
+        Debug.Log($"[EnemyAI] {gameObject.name} healed +{amount}. HP: {_currentHealth}/{maxHealth}");
+    }
 
     public void TakeDamage(int amount)
     {
