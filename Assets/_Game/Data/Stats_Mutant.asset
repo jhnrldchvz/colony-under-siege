@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: Stats_Mutant
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Mutant
-  maxHealth: 100
-  patrolSpeed: 2.5
-  chaseSpeed: 5
+  maxHealth: 140
+  patrolSpeed: 3.8
+  chaseSpeed: 6.5
   detectionRange: 25
-  fieldOfView: 360
-  loseRange: 20
-  attackRange: 1.2
-  attackDamage: 6
-  attackCooldown: 1.5
+  fieldOfView: 180
+  loseRange: 35
+  attackRange: 2.2
+  attackDamage: 15
+  attackCooldown: 2
   isRanged: 0
   projectilePrefab: {fileID: 0}
   preferredRange: 10
-  dropChance: 0.75
+  dropChance: 1

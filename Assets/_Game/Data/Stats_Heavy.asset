@@ -14,12 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Heavy
   maxHealth: 200
-  patrolSpeed: 1.2
-  chaseSpeed: 2.5
-  detectionRange: 7
+  patrolSpeed: 2
+  chaseSpeed: 4
+  detectionRange: 25
   fieldOfView: 80
-  loseRange: 10
-  attackRange: 2.8
-  attackDamage: 25
-  attackCooldown: 2.5
+  loseRange: 35
+  attackRange: 2.2
+  attackDamage: 15
+  attackCooldown: 2
+  isRanged: 0
+  projectilePrefab: {fileID: 0}
+  preferredRange: 10
   dropChance: 1

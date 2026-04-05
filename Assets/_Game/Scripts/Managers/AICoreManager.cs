@@ -1,43 +1,64 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// AICoreManager — heals all alive enemies periodically.
-/// Active at scene start. Deactivated when all 4 terminals are switched off
-/// via TerminalGroupController.onAllDeactivated.
+/// AICoreManager — heals all alive enemies every second.
+/// Active at scene start. Deactivated when all 4 terminals are switched off.
 ///
 /// Setup:
 ///   1. Create empty GameObject "AICoreManager" in Stage [4]
 ///   2. Attach this script
-///   3. Wire TerminalGroupController.onAllDeactivated → AICoreManager.Deactivate()
+///   3. Wire healingWarningBanner — drag the warning panel GO directly
+///   4. Wire TerminalGroupController.onAllDeactivated → AICoreManager.Deactivate()
+///   5. Wire onDeactivated → AccessKey GO SetActive(true)
 /// </summary>
 public class AICoreManager : MonoBehaviour
 {
     [Header("Healing")]
-    [Tooltip("Seconds between heal pulses")]
-    public float healInterval  = 8f;
+    public float healInterval = 1f;
+    public int   healAmount   = 5;
 
-    [Tooltip("HP restored to each enemy per pulse")]
-    public int   healAmount    = 15;
+    [Header("Warning Banner")]
+    [Tooltip("Drag the HUD warning panel here — shown on start, hidden on deactivate")]
+    public GameObject healingWarningBanner;
+
+    [Tooltip("Enable blinking effect on the banner")]
+    public bool  blinkBanner    = true;
+    [Tooltip("Blinks per second")]
+    public float blinkSpeed     = 2f;
 
     [Header("Events")]
-    public UnityEvent onDeactivated;  // Wire to: AccessKey GO SetActive(true)
+    public UnityEvent onDeactivated;
 
     // ---------------------------------------------------------------
     public bool IsActive { get; private set; } = true;
 
-    private float _healTimer = 0f;
+    private float _healTimer  = 0f;
+    private float _blinkTimer = 0f;
+
+    private void Start()
+    {
+        if (healingWarningBanner != null)
+            healingWarningBanner.SetActive(true);
+    }
 
     private void Update()
     {
         if (!IsActive) return;
 
         _healTimer += Time.deltaTime;
+
         if (_healTimer >= healInterval)
         {
             _healTimer = 0f;
             HealAllEnemies();
+        }
+
+        // Blink the banner
+        if (blinkBanner && healingWarningBanner != null)
+        {
+            _blinkTimer += Time.deltaTime * blinkSpeed;
+            healingWarningBanner.SetActive(Mathf.Sin(_blinkTimer * Mathf.PI) > 0f);
         }
     }
 
@@ -56,16 +77,15 @@ public class AICoreManager : MonoBehaviour
         Debug.Log($"[AICoreManager] Healed {count} enemies by {healAmount} HP.");
     }
 
-    /// <summary>
-    /// Called by TerminalGroupController.onAllDeactivated UnityEvent.
-    /// Stops healing and fires onDeactivated for access key reveal.
-    /// </summary>
     public void Deactivate()
     {
         if (!IsActive) return;
 
         IsActive   = false;
         _healTimer = 0f;
+
+        if (healingWarningBanner != null)
+            healingWarningBanner.SetActive(false);
 
         Debug.Log("[AICoreManager] AI Core deactivated — healing stopped.");
         onDeactivated?.Invoke();

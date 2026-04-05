@@ -94,7 +94,7 @@ public class InventoryManager : MonoBehaviour
     {
         // Format: WeaponType, magazineSize, maxReserve
         RegisterWeapon(WeaponType.Pistol,   magSize: 12, maxRes: 60);
-        RegisterWeapon(WeaponType.Rifle,    magSize: 30, maxRes: 120);
+        RegisterWeapon(WeaponType.Rifle,    magSize: 45, maxRes: 250);
         RegisterWeapon(WeaponType.Shotgun,  magSize: 6,  maxRes: 30);
         RegisterWeapon(WeaponType.Grenade,  magSize: 1,  maxRes: 4);
         RegisterWeapon(WeaponType.Decoy,    magSize: 3,  maxRes: 3);

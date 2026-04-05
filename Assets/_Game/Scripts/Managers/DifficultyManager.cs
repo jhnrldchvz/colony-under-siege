@@ -35,6 +35,33 @@ public class DifficultyManager : MonoBehaviour
             return;
         }
         Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        // Re-apply current tier to new enemies when scene loads
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene,
+                               UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        // Wait for enemies to register then apply persisted tier
+        StartCoroutine(ReapplyTierAfterLoad());
+    }
+
+    private System.Collections.IEnumerator ReapplyTierAfterLoad()
+    {
+        yield return null; // frame 1 — enemies register
+        yield return null; // frame 2 — safety buffer
+
+        // Reset shot window — new level, fresh accuracy sample
+        ResetWindow();
+        _evalTimer = 0f;
+
+        // Apply the persisted tier to all new enemies
+        ApplyTierToAllEnemies(CurrentTier);
+
+        Debug.Log($"[DifficultyManager] Scene loaded — persisted tier '{CurrentTier}' " +
+                  $"applied to new enemies. Accuracy window reset.");
     }
 
     // ---------------------------------------------------------------
@@ -243,9 +270,11 @@ public class DifficultyManager : MonoBehaviour
 
         var enemies = EnemyManager.Instance.GetLiveEnemies();
 
-        foreach (EnemyAI enemy in enemies)
+        foreach (IEnemy iEnemy in enemies)
         {
-            if (enemy == null || !enemy.IsAlive) continue;
+            if (iEnemy == null || !iEnemy.IsAlive) continue;
+            EnemyAI enemy = iEnemy as EnemyAI;
+            if (enemy == null) continue;
             enemy.ApplyDifficultySettings(BuildSettings(tier));
         }
 
@@ -319,6 +348,7 @@ public class DifficultyManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
         if (Instance == this) Instance = null;
     }
 }

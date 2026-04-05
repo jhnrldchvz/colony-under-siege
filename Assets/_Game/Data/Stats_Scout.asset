@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: Stats_Scout
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Scout
-  maxHealth: 30
+  maxHealth: 70
   patrolSpeed: 3.5
-  chaseSpeed: 6
-  detectionRange: 20
-  fieldOfView: 140
-  loseRange: 22
-  attackRange: 20
-  attackDamage: 5
-  attackCooldown: 2.2
+  chaseSpeed: 5.5
+  detectionRange: 35
+  fieldOfView: 100
+  loseRange: 45
+  attackRange: 18
+  attackDamage: 12
+  attackCooldown: 2
   isRanged: 1
   projectilePrefab: {fileID: 5387381916628305061, guid: 6380f56948a36edf389be41d5e1433b6, type: 3}
-  preferredRange: 18
-  dropChance: 1
+  preferredRange: 12
+  dropChance: 0.568

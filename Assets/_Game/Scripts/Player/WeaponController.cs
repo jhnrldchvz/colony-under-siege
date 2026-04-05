@@ -343,6 +343,7 @@ public class WeaponController : MonoBehaviour
     private IEnumerator ReloadCoroutine()
     {
         _isReloading = true;
+        UIManager.Instance?.SetReloading(true);
         SFXManager.Instance?.PlayReload();
         Debug.Log($"[WeaponController] Reloading {Current.displayName}...");
 
@@ -352,6 +353,7 @@ public class WeaponController : MonoBehaviour
             InventoryManager.Instance.Reload(Current.type);
 
         _isReloading = false;
+        UIManager.Instance?.SetReloading(false);
         RefreshHUD();
         Debug.Log($"[WeaponController] {Current.displayName} reload complete.");
     }

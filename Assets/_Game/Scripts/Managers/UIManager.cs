@@ -82,6 +82,12 @@ public class UIManager : MonoBehaviour
     [Tooltip("Crosshair image — hidden during cursor-visible states")]
     public GameObject crosshair;
 
+    [Header("HUD — Reload Indicator")]
+    [Tooltip("TMP or Image shown in place of crosshair while reloading")]
+    public GameObject reloadIndicator;
+    [Tooltip("Blink speed — times per second")]
+    public float      reloadBlinkSpeed = 4f;
+
     [Header("HUD — Key Item")]
     [Tooltip("Image shown when player has collected the access key — hidden by default")]
     public GameObject keyItemIndicator;
@@ -111,6 +117,18 @@ public class UIManager : MonoBehaviour
 
     [Tooltip("Text label for power cell 2")]
     public TextMeshProUGUI powerCell2Text;
+
+    [Header("HUD — Deactivation Device Indicator")]
+    [Tooltip("Shown when deactivation_device_01 is collected")]
+    public GameObject            deactivationDeviceIndicator;
+    public UnityEngine.UI.Image  deactivationDeviceIcon;
+    public TextMeshProUGUI       deactivationDeviceText;
+
+    [Header("HUD — AI Core Healing Warning")]
+    [Tooltip("Banner panel shown while AI Core is healing enemies")]
+    public GameObject            healingWarningBanner;
+    [Tooltip("TMP text on the healing warning banner")]
+    public TMPro.TextMeshProUGUI healingWarningText;
 
     // ---------------------------------------------------------------
     // Inspector slots — Pause panel
@@ -169,13 +187,16 @@ public class UIManager : MonoBehaviour
     // Private state
     // ---------------------------------------------------------------
 
-    private int              _maxHealth = 100;
+    private int              _maxHealth   = 100;
     private PlayerController _player;
+    private bool             _isReloading = false;
+    private float            _blinkTimer  = 0f;
 
     // Tracks which item indicators have been shown so they survive pause/resume
     private bool _keyItemCollected;
     private bool _powerCell1Collected;
     private bool _powerCell2Collected;
+    private bool _deactivationDeviceCollected;
 
     // PlayerPrefs keys
     private const string KEY_SENSITIVITY    = "MouseSensitivity";
@@ -184,12 +205,21 @@ public class UIManager : MonoBehaviour
     private const string KEY_SFX_VOLUME     = "SFXVolume";
 
     // Key item IDs — must match InventoryManager.AddKeyItem() calls
-    private const string KEY_POWER_CELL_01 = "power_cell_01";
-    private const string KEY_POWER_CELL_02 = "power_cell_02";
+    private const string KEY_POWER_CELL_01     = "power_cell_01";
+    private const string KEY_POWER_CELL_02     = "power_cell_02";
+    private const string KEY_DEACTIVATION_TOOL = "deactivation_device_01";
 
     // ---------------------------------------------------------------
     // Lifecycle
     // ---------------------------------------------------------------
+
+    private void Update()
+    {
+        if (!_isReloading || reloadIndicator == null) return;
+
+        _blinkTimer += Time.deltaTime * reloadBlinkSpeed;
+        reloadIndicator.SetActive(Mathf.Sin(_blinkTimer * Mathf.PI) > 0f);
+    }
 
     private void Start()
     {
@@ -317,6 +347,10 @@ public class UIManager : MonoBehaviour
         ApplyMusicVolume(musicVol);
         ApplySFXVolume(sfxVol);
 
+        // Ensure reload indicator starts hidden
+        if (reloadIndicator != null) reloadIndicator.SetActive(false);
+        if (crosshair       != null) crosshair.SetActive(true);
+
         ShowHUDOnly();
     }
 
@@ -395,6 +429,29 @@ public class UIManager : MonoBehaviour
             label.text = Mathf.RoundToInt(val * 100f) + "%";
     }
 
+    // ---------------------------------------------------------------
+    // AI Core healing warning
+    // ---------------------------------------------------------------
+
+    /// <summary>Shows the healing warning banner with optional message.</summary>
+    public void ShowHealingWarning(string message = "⚠ AI Core healing enemies — deactivate terminals!")
+    {
+        if (healingWarningBanner != null) healingWarningBanner.SetActive(true);
+        if (healingWarningText   != null) healingWarningText.text = message;
+    }
+
+    /// <summary>Updates the warning text — called each heal tick with countdown.</summary>
+    public void UpdateHealingWarning(string message)
+    {
+        if (healingWarningText != null) healingWarningText.text = message;
+    }
+
+    /// <summary>Hides the healing warning banner when AI Core is deactivated.</summary>
+    public void HideHealingWarning()
+    {
+        if (healingWarningBanner != null) healingWarningBanner.SetActive(false);
+    }
+
     private void OnDestroy()
     {
         if (GameManager.Instance != null)
@@ -459,7 +516,9 @@ public class UIManager : MonoBehaviour
         // Restore collected-item indicators — never reset them on resume
         if (keyItemIndicator    != null) keyItemIndicator.SetActive(_keyItemCollected);
         if (powerCell1Indicator != null) powerCell1Indicator.SetActive(_powerCell1Collected);
-        if (powerCell2Indicator != null) powerCell2Indicator.SetActive(_powerCell2Collected);
+        if (powerCell2Indicator          != null) powerCell2Indicator.SetActive(_powerCell2Collected);
+        if (deactivationDeviceIndicator  != null) deactivationDeviceIndicator.SetActive(_deactivationDeviceCollected);
+        // Healing warning managed by AICoreManager — don't reset here
     }
 
     /// <summary>Shows pause panel on top of the HUD.</summary>
@@ -526,9 +585,10 @@ public class UIManager : MonoBehaviour
     /// <summary>Fires when InventoryManager.OnKeyItemAdded fires.</summary>
     private void OnKeyItemCollected(string itemId)
     {
-        if (itemId == KEY_POWER_CELL_01)       ShowPowerCell1();
-        else if (itemId == KEY_POWER_CELL_02)  ShowPowerCell2();
-        else                                   ShowKeyItem(itemId);
+        if (itemId == KEY_POWER_CELL_01)           ShowPowerCell1();
+        else if (itemId == KEY_POWER_CELL_02)      ShowPowerCell2();
+        else if (itemId == KEY_DEACTIVATION_TOOL)  ShowDeactivationDevice();
+        else                                       ShowKeyItem(itemId);
     }
 
     // ---------------------------------------------------------------
@@ -612,6 +672,32 @@ public class UIManager : MonoBehaviour
     /// <summary>
     /// Shows the key item indicator in the HUD.
     /// Call this when player collects the key.
+    /// <summary>
+    /// Called by ObjectivePickup — routes to the correct indicator by itemId.
+    /// Falls back to generic ShowKeyItem with display name for unknown items.
+    /// </summary>
+    public void ShowKeyItemByIdAndName(string itemId, string displayName)
+    {
+        if (itemId == KEY_POWER_CELL_01)          ShowPowerCell1();
+        else if (itemId == KEY_POWER_CELL_02)     ShowPowerCell2();
+        else if (itemId == KEY_DEACTIVATION_TOOL) ShowDeactivationDevice();
+        else                                      ShowKeyItem(displayName);
+    }
+
+    public void ShowDeactivationDevice()
+    {
+        _deactivationDeviceCollected = true;
+        if (deactivationDeviceIndicator != null) deactivationDeviceIndicator.SetActive(true);
+        if (deactivationDeviceText      != null) deactivationDeviceText.text = "Deactivation Device";
+        Debug.Log("[UIManager] Deactivation Device indicator shown.");
+    }
+
+    public void HideDeactivationDevice()
+    {
+        _deactivationDeviceCollected = false;
+        if (deactivationDeviceIndicator != null) deactivationDeviceIndicator.SetActive(false);
+    }
+
     /// InventoryManager.OnKeyItemAdded triggers this via ObjectiveManager
     /// or wire it directly from InventoryManager.
     /// </summary>
@@ -680,8 +766,23 @@ public class UIManager : MonoBehaviour
         if (panel != null) panel.SetActive(active);
     }
 
+    /// <summary>Called by WeaponController when reload starts/ends.</summary>
+    public void SetReloading(bool reloading)
+    {
+        _isReloading = reloading;
+        _blinkTimer  = 0f;
+
+        if (crosshair       != null) crosshair.SetActive(!reloading);
+        if (reloadIndicator != null) reloadIndicator.SetActive(reloading);
+    }
+
     private void SetCrosshair(bool visible)
     {
         if (crosshair != null) crosshair.SetActive(visible);
+        if (_isReloading && visible)
+        {
+            // Don't show crosshair if still reloading
+            if (crosshair != null) crosshair.SetActive(false);
+        }
     }
 }

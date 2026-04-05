@@ -791,6 +791,75 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 927177853}
   m_CullTransparentMesh: 1
+--- !u!1 &949025169
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 949025170}
+  - component: {fileID: 949025171}
+  m_Layer: 0
+  m_Name: DifficultyManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &949025170
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 949025169}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.09938, y: 2.42403, z: 4.91616}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &949025171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 949025169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b95f802d025c04e2fa48af215bec084a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DifficultyManager
+  easyThreshold: 0.25
+  hardThreshold: 0.6
+  evaluationInterval: 10
+  minShotsBeforeEval: 8
+  easyHealthMult: 0.75
+  easyPatrolSpeedMult: 0.85
+  easyChaseSpeedMult: 0.8
+  easyDamageMult: 0.7
+  easyDetectionMult: 0.8
+  easyAttackRangeMult: 0.85
+  easyCooldownMult: 1.35
+  normalHealthMult: 1
+  normalPatrolSpeedMult: 1
+  normalChaseSpeedMult: 1
+  normalDamageMult: 1
+  normalDetectionMult: 1
+  normalAttackRangeMult: 1
+  normalCooldownMult: 1
+  hardHealthMult: 1.3
+  hardPatrolSpeedMult: 1.25
+  hardChaseSpeedMult: 1.3
+  hardDamageMult: 1.5
+  hardDetectionMult: 1.25
+  hardAttackRangeMult: 1.15
+  hardCooldownMult: 0.75
 --- !u!1 &966182851
 GameObject:
   m_ObjectHideFlags: 0
@@ -2383,6 +2452,7 @@ SceneRoots:
   - {fileID: 2055722056}
   - {fileID: 1454792322}
   - {fileID: 360156991}
+  - {fileID: 949025170}
   - {fileID: 1008049291}
   - {fileID: 1950304269}
   - {fileID: 1691411003}

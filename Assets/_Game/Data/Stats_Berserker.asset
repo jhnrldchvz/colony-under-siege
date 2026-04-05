@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: Stats_Berserker
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Berserker
-  maxHealth: 70
-  patrolSpeed: 3.5
-  chaseSpeed: 7
-  detectionRange: 25
-  fieldOfView: 120
-  loseRange: 14
-  attackRange: 1.5
-  attackDamage: 10
-  attackCooldown: 0.7
+  maxHealth: 100
+  patrolSpeed: 4.5
+  chaseSpeed: 7.5
+  detectionRange: 28
+  fieldOfView: 85
+  loseRange: 38
+  attackRange: 2
+  attackDamage: 18
+  attackCooldown: 1.8
   isRanged: 0
   projectilePrefab: {fileID: 0}
   preferredRange: 10
-  dropChance: 1
+  dropChance: 0.427

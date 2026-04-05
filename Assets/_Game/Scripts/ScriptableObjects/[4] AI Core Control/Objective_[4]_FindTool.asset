@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e0f9670d19d376efa60e89c562af73b, type: 3}
   m_Name: Objective_[4]_FindTool
   m_EditorClassIdentifier: Assembly-CSharp::Objective
-  objectiveText: Find the deactivation tool
-  objectiveId: Objective_[4]_FindTool
+  objectiveText: Find the deactivation device
+  objectiveId: Objective_[4]_FindDevice
   type: 2
-  requiredCount: 0
-  requiredItemId: deactivation_tool
+  requiredCount: 1
+  requiredItemId: deactivation_device_01
   totalPlates: 0
