@@ -178,6 +178,19 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
 
         SetState(EnemyState.Patrol);
         PickRandomPatrolPoint();
+
+        FixRendererCulling();
+    }
+
+    private void FixRendererCulling()
+    {
+        foreach (SkinnedMeshRenderer smr in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            smr.updateWhenOffscreen = true;
+            Bounds b = smr.localBounds;
+            b.Expand(new Vector3(2f, 3f, 2f));
+            smr.localBounds = b;
+        }
     }
 
     private void Update()
