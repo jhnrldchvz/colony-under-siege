@@ -26,9 +26,19 @@ public class WaveSpawner : MonoBehaviour
 
     // ---------------------------------------------------------------
 
-    /// <summary>Called by BossController.onPhase2Start event.</summary>
+    private bool _spawning = false;
+
+    /// <summary>
+    /// Spawns the configured wave. Safe to call from BossController on any interval —
+    /// will skip silently if a previous wave is still spawning.
+    /// </summary>
     public void SpawnWave()
     {
+        if (_spawning)
+        {
+            Debug.Log("[WaveSpawner] SpawnWave() called but previous wave still in progress — skipped.");
+            return;
+        }
         StartCoroutine(SpawnSequence());
     }
 
@@ -37,13 +47,13 @@ public class WaveSpawner : MonoBehaviour
         if (enemyPrefabs == null || enemyPrefabs.Length == 0) yield break;
         if (spawnPoints  == null || spawnPoints.Length  == 0) yield break;
 
+        _spawning = true;
         Debug.Log($"[WaveSpawner] Spawning wave — {spawnPoints.Length} enemies.");
 
         for (int i = 0; i < spawnPoints.Length; i++)
         {
             if (spawnPoints[i] == null) continue;
 
-            // Cycle through prefabs if fewer than spawn points
             GameObject prefab = enemyPrefabs[i % enemyPrefabs.Length];
             if (prefab == null) continue;
 
@@ -52,6 +62,7 @@ public class WaveSpawner : MonoBehaviour
             yield return new WaitForSeconds(spawnDelay);
         }
 
+        _spawning = false;
         Debug.Log("[WaveSpawner] Wave spawn complete.");
     }
 }

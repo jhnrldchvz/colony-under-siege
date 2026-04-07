@@ -71,6 +71,10 @@ public class SFXManager : MonoBehaviour
     [Tooltip("3D positional clip played at the barrel's world position")]
     public AudioClip[] explosionSounds;
 
+    [Header("Boss")]
+    [Tooltip("Heavy slam clip played when boss lands from a jump attack")]
+    public AudioClip[] bossSlamSounds;
+
     [Header("Volume")]
     [Range(0f, 1f)] public float weaponVolume    = 0.8f;
     [Range(0f, 1f)] public float enemyVolume     = 0.7f;
@@ -97,6 +101,9 @@ public class SFXManager : MonoBehaviour
     // Positional — 3D explosion sound at world position
     public void PlayExplosionAt(Vector3 pos)
         => Play3D(RandomClip(explosionSounds), pos, explosionVolume);
+
+    public void PlayBossSlamAt(Vector3 pos)
+        => Play3D(RandomClip(bossSlamSounds), pos, explosionVolume);
 
     // Positional — 3D sound at enemy location
     public void PlayEnemyDeathAt(Vector3 pos)

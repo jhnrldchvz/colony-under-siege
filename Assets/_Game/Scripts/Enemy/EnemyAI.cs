@@ -681,7 +681,6 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
 
     private void Die()
     {
-        ScoreManager.Instance?.ReportKill(gameObject.name);
         if (!IsAlive) return;
 
         IsAlive = false;

@@ -47,10 +47,10 @@ public class EnemyManager : MonoBehaviour
     public event Action OnAllEnemiesDefeated;
 
     /// <summary>
-    /// Fired each time an enemy dies. Passes current kill count.
-    /// UIManager can subscribe to show a kill counter if needed.
+    /// Fired each time an enemy dies. Passes the enemy's GameObject name
+    /// so ScoreManager can award type-specific points without a separate call.
     /// </summary>
-    public event Action<int> OnEnemyKilled;
+    public event Action<string> OnEnemyKilled;
 
     // ---------------------------------------------------------------
     // Public read-only stats
@@ -91,10 +91,11 @@ public class EnemyManager : MonoBehaviour
         if (enemy == null || !_liveEnemies.Remove(enemy)) return;
 
         KillCount++;
-        Debug.Log($"[EnemyManager] Killed: {(enemy as MonoBehaviour)?.name}. " +
+        string name = (enemy as MonoBehaviour)?.name ?? "Unknown";
+        Debug.Log($"[EnemyManager] Killed: {name}. " +
                   $"Kills: {KillCount}/{TotalEnemies}, Alive: {AliveCount}");
 
-        OnEnemyKilled?.Invoke(KillCount);
+        OnEnemyKilled?.Invoke(name);
 
         if (_liveEnemies.Count == 0)
         {

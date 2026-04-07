@@ -140,7 +140,7 @@ public class ObjectiveManager : MonoBehaviour
     // Event handlers
     // ---------------------------------------------------------------
 
-    private void OnEnemyKilled(int killCount)
+    private void OnEnemyKilled(string _)
     {
         EvaluateObjectivesOfType(Objective.ObjectiveType.KillCount);
         RefreshHUD();

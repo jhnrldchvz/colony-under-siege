@@ -91,7 +91,11 @@ public class ScoreManager : MonoBehaviour
     private void SubscribeToEnemyManager()
     {
         if (EnemyManager.Instance != null)
+        {
+            // Unsubscribe first to prevent double-subscription on scene reload
+            EnemyManager.Instance.OnEnemyKilled -= OnEnemyKilledCount;
             EnemyManager.Instance.OnEnemyKilled += OnEnemyKilledCount;
+        }
     }
 
     private void Update()
@@ -173,17 +177,9 @@ public class ScoreManager : MonoBehaviour
     // Private
     // ---------------------------------------------------------------
 
-    // Called by EnemyManager.OnEnemyKilled (passes kill count, not enemy ref)
-    private void OnEnemyKilledCount(int killCount)
-    {
-        TotalKills++;
-        // Award generic points per kill — enemy type not available from this event
-        RawKillPoints += pointsGeneric;
-        Debug.Log($"[ScoreManager] Kill +{pointsGeneric}. Total: {TotalKills}");
-    }
-
-    /// <summary>Call directly when a named enemy dies for accurate type-based points.</summary>
-    public void ReportKill(string enemyName)
+    // Called by EnemyManager.OnEnemyKilled — now receives enemy name for type-based points.
+    // This is the single kill-counting path for ALL enemy types including the boss.
+    private void OnEnemyKilledCount(string enemyName)
     {
         TotalKills++;
         string n = enemyName.ToLower();
