@@ -67,11 +67,16 @@ public class SFXManager : MonoBehaviour
     public AudioClip   pickupItem;
     public AudioClip   throwObject;
 
+    [Header("Explosion")]
+    [Tooltip("3D positional clip played at the barrel's world position")]
+    public AudioClip[] explosionSounds;
+
     [Header("Volume")]
-    [Range(0f, 1f)] public float weaponVolume  = 0.8f;
-    [Range(0f, 1f)] public float enemyVolume   = 0.7f;
-    [Range(0f, 1f)] public float playerVolume  = 0.7f;
-    [Range(0f, 1f)] public float pickupVolume  = 0.5f;
+    [Range(0f, 1f)] public float weaponVolume    = 0.8f;
+    [Range(0f, 1f)] public float enemyVolume     = 0.7f;
+    [Range(0f, 1f)] public float playerVolume    = 0.7f;
+    [Range(0f, 1f)] public float pickupVolume    = 0.5f;
+    [Range(0f, 1f)] public float explosionVolume = 1.0f;
 
     [HideInInspector]
     public float masterVolume = 1f; // Controlled by UIManager settings
@@ -88,6 +93,10 @@ public class SFXManager : MonoBehaviour
     public void PlayPlayerHurt()  => PlayRandom(playerHurt, playerVolume);
     public void PlayPickup()      => Play2D(pickupItem, pickupVolume);
     public void PlayThrow()       => Play2D(throwObject, pickupVolume);
+
+    // Positional — 3D explosion sound at world position
+    public void PlayExplosionAt(Vector3 pos)
+        => Play3D(RandomClip(explosionSounds), pos, explosionVolume);
 
     // Positional — 3D sound at enemy location
     public void PlayEnemyDeathAt(Vector3 pos)

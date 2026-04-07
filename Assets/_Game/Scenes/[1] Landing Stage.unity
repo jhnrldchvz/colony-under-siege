@@ -530,10 +530,12 @@ MonoBehaviour:
   - {fileID: 8300000, guid: e30354c680b53b2a480f03626e4b370d, type: 3}
   pickupItem: {fileID: 0}
   throwObject: {fileID: 0}
+  explosionSounds: []
   weaponVolume: 1
   enemyVolume: 1
   playerVolume: 1
   pickupVolume: 1
+  explosionVolume: 1
   masterVolume: 1
 --- !u!4 &24282946
 Transform:
@@ -5410,7 +5412,7 @@ GameObject:
   - component: {fileID: 412438163}
   - component: {fileID: 412438162}
   m_Layer: 0
-  m_Name: 1. Instructions
+  m_Name: Instructions Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5448,7 +5450,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.4716981, g: 0.30927375, b: 0.30927375, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -21319,6 +21321,10 @@ PrefabInstance:
       propertyPath: weapons.Array.data[1].muzzleFlashFX
       value: 
       objectReference: {fileID: 100000, guid: 43142f64f71eac0eb971faa675e18147, type: 3}
+    - target: {fileID: 1793061544629898055, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
+      propertyPath: weapons.Array.data[2].unlockedFromBuildIndex
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 4588927758187782404, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: m_Name
       value: Player

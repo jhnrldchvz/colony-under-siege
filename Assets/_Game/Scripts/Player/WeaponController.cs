@@ -45,6 +45,11 @@ public class WeaponController : MonoBehaviour
         public GameObject projectilePrefab;
         public float      throwForce   = 15f;
         public float      throwUpAngle = 20f;
+
+        [Header("Stage Lock")]
+        [Tooltip("This weapon is hidden and unselectable below this build index. " +
+                 "0 = always available. Stages: 1=Landing, 2=Engineering, 3=Bio-Lab, 4=AI Core, 5=Reactor.")]
+        public int unlockedFromBuildIndex = 0;
     }
 
     [Header("Weapon Configs")]
@@ -101,6 +106,17 @@ public class WeaponController : MonoBehaviour
     // ---------------------------------------------------------------
     private WeaponConfig Current => weapons[_currentWeaponIndex];
     public InventoryManager.WeaponType currentWeaponType => Current.type;
+
+    /// <summary>
+    /// Returns true if the weapon at <paramref name="index"/> is unlocked in the current scene.
+    /// Compares the weapon's <c>unlockedFromBuildIndex</c> against the active scene build index.
+    /// </summary>
+    private bool IsWeaponAvailable(int index)
+    {
+        if (index < 0 || index >= weapons.Length) return false;
+        return UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex
+               >= weapons[index].unlockedFromBuildIndex;
+    }
 
     // ---------------------------------------------------------------
     // Lifecycle
@@ -162,6 +178,24 @@ public class WeaponController : MonoBehaviour
             }
         }
 
+        // Hide models for weapons locked in this stage, and ensure we start on an available one
+        for (int i = 0; i < weapons.Length; i++)
+        {
+            if (!IsWeaponAvailable(i) && weapons[i].modelObject != null)
+            {
+                weapons[i].modelObject.SetActive(false);
+                Debug.Log($"[WeaponController] '{weapons[i].displayName}' locked in this stage (requires build index {weapons[i].unlockedFromBuildIndex}).");
+            }
+        }
+
+        if (!IsWeaponAvailable(_currentWeaponIndex))
+        {
+            for (int i = 0; i < weapons.Length; i++)
+            {
+                if (IsWeaponAvailable(i)) { _currentWeaponIndex = i; break; }
+            }
+        }
+
         RefreshHUD();
         ShowActiveModel();
         Debug.Log($"[WeaponController] Ready. Current weapon: {Current.displayName}");
@@ -179,9 +213,9 @@ public class WeaponController : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchToIndex(0);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchToIndex(1);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SwitchToIndex(2);
+        if (Input.GetKeyDown(KeyCode.Alpha1) && IsWeaponAvailable(0)) SwitchToIndex(0);
+        if (Input.GetKeyDown(KeyCode.Alpha2) && IsWeaponAvailable(1)) SwitchToIndex(1);
+        if (Input.GetKeyDown(KeyCode.Alpha3) && IsWeaponAvailable(2)) SwitchToIndex(2);
 
         bool isHolding = _grab != null && _grab.IsHolding;
         if (isHolding != _weaponHidden)
@@ -381,6 +415,7 @@ public class WeaponController : MonoBehaviour
     private void SwitchToIndex(int index)
     {
         if (index == _currentWeaponIndex || index < 0 || index >= weapons.Length) return;
+        if (!IsWeaponAvailable(index)) return;
 
         if (_isReloading)
         {
