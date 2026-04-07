@@ -183,6 +183,33 @@ public class UIManager : MonoBehaviour
     public Button nextLevelButton;
     public Button mainMenuButton;
 
+    [Header("Storyboard")]
+    [Tooltip("Panel shown for narrative slides — displayed before instructions on scene load, " +
+             "or after the final boss before the win screen.")]
+    public GameObject storyboardPanel;
+
+    [Tooltip("Image component that displays the current storyboard slide image")]
+    public UnityEngine.UI.Image sbImage;
+
+    [Tooltip("Optional title/character label on storyboard slides")]
+    public TMPro.TextMeshProUGUI sbTitleText;
+
+    [Tooltip("Narrative body text on storyboard slides")]
+    public TMPro.TextMeshProUGUI sbBodyText;
+
+    [Tooltip("Slide counter e.g. '1 / 3'")]
+    public TMPro.TextMeshProUGUI sbCounterText;
+
+    public UnityEngine.UI.Button sbNextButton;
+    public UnityEngine.UI.Button sbPrevButton;
+    public UnityEngine.UI.Button sbContinueButton;
+
+    [Tooltip("Intro storyboard slides shown at the start of this stage")]
+    public StoryboardSlide[] storyboardSlides;
+
+    [Tooltip("Outro storyboard slides shown BEFORE the win panel — Stage [5] only")]
+    public StoryboardSlide[] winStoryboardSlides;
+
     [Header("Pre-Game Instructions")]
     [Tooltip("Root panel shown before gameplay starts — hidden after player clicks Start")]
     public GameObject instructionPanel;
@@ -217,11 +244,13 @@ public class UIManager : MonoBehaviour
     // Private state
     // ---------------------------------------------------------------
 
-    private int              _maxHealth   = 100;
-    private int              _slideIndex  = 0;
+    private int              _maxHealth      = 100;
+    private int              _slideIndex     = 0;
+    private int              _sbIndex        = 0;
+    private bool             _sbIsWinOutro   = false; // true when showing post-boss storyboard
     private PlayerController _player;
-    private bool             _isReloading = false;
-    private float            _blinkTimer  = 0f;
+    private bool             _isReloading    = false;
+    private float            _blinkTimer     = 0f;
 
     // Tracks which item indicators have been shown so they survive pause/resume
     private bool _keyItemCollected;
@@ -306,7 +335,12 @@ public class UIManager : MonoBehaviour
     {
         yield return null; // wait one frame for inventory to settle
 
-        if (instructionSlides != null && instructionSlides.Length > 0 && instructionPanel != null)
+        // Flow on scene load: Storyboard (if any) → Instructions (if any) → HUD
+        if (storyboardSlides != null && storyboardSlides.Length > 0 && storyboardPanel != null)
+        {
+            ShowStoryboard(winOutro: false);
+        }
+        else if (instructionSlides != null && instructionSlides.Length > 0 && instructionPanel != null)
         {
             ShowInstructions();
         }
@@ -520,6 +554,9 @@ public class UIManager : MonoBehaviour
         switch (newState)
         {
             case GameManager.GameState.Playing:
+                // Plain resume — show HUD. Storyboard→Instructions chaining is handled
+                // explicitly in SbContinue(), not here, to avoid showing instructions
+                // every time the player resumes from the pause menu.
                 ShowHUDOnly();
                 break;
 
@@ -668,6 +705,19 @@ public class UIManager : MonoBehaviour
     /// <summary>Called by GameManager.OnStageWin event.</summary>
     private void ShowWinScreen()
     {
+        // If this stage has a win-outro storyboard, show it before the win panel.
+        // SbContinue() will call ShowWinPanelNow() once the last slide is dismissed.
+        if (winStoryboardSlides != null && winStoryboardSlides.Length > 0 && storyboardPanel != null)
+        {
+            ShowStoryboard(winOutro: true);
+            return;
+        }
+
+        ShowWinPanelNow();
+    }
+
+    private void ShowWinPanelNow()
+    {
         SetPanel(hudPanel,      false);
         SetPanel(pausePanel,    false);
         SetPanel(gameOverPanel, false);
@@ -691,6 +741,92 @@ public class UIManager : MonoBehaviour
             nextLevelButton.gameObject.SetActive(false);
 
         Debug.Log("[UIManager] Win screen shown.");
+    }
+
+    // ---------------------------------------------------------------
+    // Storyboard
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Displays the storyboard panel.
+    /// <paramref name="winOutro"/> = true when showing post-boss slides before the win panel.
+    /// </summary>
+    private void ShowStoryboard(bool winOutro)
+    {
+        _sbIsWinOutro = winOutro;
+        _sbIndex      = 0;
+
+        StoryboardSlide[] slides = winOutro ? winStoryboardSlides : storyboardSlides;
+        if (slides == null || slides.Length == 0) return;
+
+        // Enter Storyboard state — freezes time, unlocks cursor
+        GameManager.Instance?.StartStoryboard();
+
+        SetPanel(hudPanel,        false);
+        SetPanel(pausePanel,      false);
+        SetPanel(gameOverPanel,   false);
+        SetPanel(winPanel,        false);
+        SetPanel(storyboardPanel, true);
+
+        // Wire buttons (RemoveAllListeners first to avoid duplicate registrations)
+        sbNextButton?     .onClick.RemoveAllListeners();
+        sbPrevButton?     .onClick.RemoveAllListeners();
+        sbContinueButton? .onClick.RemoveAllListeners();
+
+        sbNextButton?     .onClick.AddListener(SbNext);
+        sbPrevButton?     .onClick.AddListener(SbPrev);
+        sbContinueButton? .onClick.AddListener(SbContinue);
+
+        RefreshStoryboardSlide();
+    }
+
+    private void RefreshStoryboardSlide()
+    {
+        StoryboardSlide[] slides = _sbIsWinOutro ? winStoryboardSlides : storyboardSlides;
+        if (slides == null || slides.Length == 0) return;
+
+        _sbIndex = Mathf.Clamp(_sbIndex, 0, slides.Length - 1);
+        StoryboardSlide slide = slides[_sbIndex];
+
+        if (sbImage     != null) { sbImage.sprite  = slide.image; sbImage.enabled = slide.image != null; }
+        if (sbTitleText != null)   sbTitleText.text = slide.titleText;
+        if (sbBodyText  != null)   sbBodyText.text  = slide.bodyText;
+        if (sbCounterText != null) sbCounterText.text = $"{_sbIndex + 1} / {slides.Length}";
+
+        bool isFirst = _sbIndex == 0;
+        bool isLast  = _sbIndex == slides.Length - 1;
+
+        if (sbPrevButton    != null) sbPrevButton.gameObject.SetActive(!isFirst);
+        if (sbNextButton    != null) sbNextButton.gameObject.SetActive(!isLast);
+        if (sbContinueButton != null) sbContinueButton.gameObject.SetActive(isLast);
+    }
+
+    private void SbNext()    { _sbIndex++; RefreshStoryboardSlide(); }
+    private void SbPrev()    { _sbIndex--; RefreshStoryboardSlide(); }
+
+    private void SbContinue()
+    {
+        SetPanel(storyboardPanel, false);
+
+        if (_sbIsWinOutro)
+        {
+            // Win-outro: transition GameManager Storyboard → Win, then show win panel
+            _sbIsWinOutro = false;
+            GameManager.Instance?.EndWinStoryboard();
+            ShowWinPanelNow();
+        }
+        else
+        {
+            // Intro storyboard: transition Storyboard → Playing, then chain into
+            // Instructions if configured, otherwise straight to HUD.
+            // We do NOT rely on HandleStateChanged here — that fires ShowHUDOnly()
+            // for every Playing transition including pause-resume.
+            GameManager.Instance?.EndStoryboard();
+
+            if (instructionSlides != null && instructionSlides.Length > 0 && instructionPanel != null)
+                ShowInstructions();
+            // else HandleStateChanged already called ShowHUDOnly() via the state transition
+        }
     }
 
     // ---------------------------------------------------------------
@@ -899,6 +1035,10 @@ public class UIManager : MonoBehaviour
 
     private void GoToMainMenu()
     {
+        // Autosave current scene index so the player can continue from here
+        int currentIndex = SceneManager.GetActiveScene().buildIndex;
+        SaveManager.Instance?.SaveProgress(currentIndex);
+
         Time.timeScale   = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible   = true;

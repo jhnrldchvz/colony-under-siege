@@ -4,14 +4,13 @@ using UnityEngine.SceneManagement;
 using TMPro;
 
 /// <summary>
-/// MainMenuManager — controls the main menu scene.
+/// MainMenuManager — controls the main menu scene (build index 0).
 ///
-/// Setup:
-///   1. Create a new scene named MainMenu — build index 0.
-///   2. Create a Canvas (Screen Space Overlay) with a GraphicRaycaster.
-///   3. Build the panels listed below.
-///   4. Drag each Button into the matching Inspector slot — NO OnClick() wiring needed.
-///   5. Attach this script to an empty GameObject named "MainMenuManager".
+/// Button flow:
+///   New Game  → deletes any existing save, loads scene 1
+///   Continue  → loads saved scene index (hidden when no save exists)
+///   Credits   → shows credits panel
+///   Quit      → exits application
 /// </summary>
 public class MainMenuManager : MonoBehaviour
 {
@@ -25,14 +24,15 @@ public class MainMenuManager : MonoBehaviour
     public TextMeshProUGUI subtitleText;
 
     [Header("Buttons — drag Button components, not GameObjects")]
-    public Button playButton;
+    public Button newGameButton;
+    public Button continueButton;
     public Button quitButton;
     public Button creditsButton;
     public Button backButton;
 
     [Header("Settings")]
-    [Tooltip("Build index of the first game level")]
-    public int gameSceneIndex = 1;
+    [Tooltip("Build index of the first game level — used by New Game")]
+    public int firstSceneIndex = 1;
 
     [Tooltip("Animate the title text on start")]
     public bool animateTitle = true;
@@ -43,8 +43,8 @@ public class MainMenuManager : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        // Wire buttons in code — can never silently break like Inspector OnClick()
-        playButton?    .onClick.AddListener(OnPlayPressed);
+        newGameButton? .onClick.AddListener(OnNewGamePressed);
+        continueButton?.onClick.AddListener(OnContinuePressed);
         quitButton?    .onClick.AddListener(OnQuitPressed);
         creditsButton? .onClick.AddListener(OnCreditsPressed);
         backButton?    .onClick.AddListener(OnBackPressed);
@@ -53,31 +53,35 @@ public class MainMenuManager : MonoBehaviour
         if (titleText    != null) titleText.text     = "Colony Under Siege";
         if (subtitleText != null) subtitleText.text  = "The colony needs you.";
 
+        // Show Continue only when save data exists
+        RefreshContinueButton();
+
         SetPanel(mainPanel,    true);
         SetPanel(creditsPanel, false);
 
-        // Unity can re-lock the cursor on the first frame (editor focus, scene transition).
-        // Use a coroutine so the unlock happens after Unity's own cursor handling settles.
         StartCoroutine(UnlockCursorDelayed());
 
         Debug.Log("[MainMenuManager] Main menu loaded.");
     }
 
+    private void RefreshContinueButton()
+    {
+        if (continueButton != null)
+            continueButton.gameObject.SetActive(
+                SaveManager.Instance != null && SaveManager.Instance.HasSaveData());
+    }
+
     private System.Collections.IEnumerator UnlockCursorDelayed()
     {
-        // Wait 3 frames — enough for Unity to finish its startup cursor handling
         yield return null;
         yield return null;
         yield return null;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible   = true;
-        Debug.Log("[MainMenuManager] Cursor unlocked.");
     }
 
     private void Update()
     {
-        // Keep enforcing cursor unlock every frame — GameManager or Unity itself
-        // may re-lock it during scene transitions or on application focus events.
         if (Cursor.lockState != CursorLockMode.None)
         {
             Cursor.lockState = CursorLockMode.None;
@@ -95,10 +99,23 @@ public class MainMenuManager : MonoBehaviour
     // Button actions
     // ---------------------------------------------------------------
 
-    private void OnPlayPressed()
+    private void OnNewGamePressed()
     {
-        Debug.Log("[MainMenuManager] Loading game...");
-        SceneManager.LoadScene(gameSceneIndex);
+        Debug.Log("[MainMenuManager] New Game — clearing save and loading scene 1.");
+        SaveManager.Instance?.DeleteSave();
+        SceneManager.LoadScene(firstSceneIndex);
+    }
+
+    private void OnContinuePressed()
+    {
+        if (SaveManager.Instance == null || !SaveManager.Instance.HasSaveData())
+        {
+            Debug.LogWarning("[MainMenuManager] Continue pressed but no save data found.");
+            return;
+        }
+
+        Debug.Log("[MainMenuManager] Continue — loading saved game.");
+        SaveManager.Instance.LoadSavedGame();
     }
 
     private void OnQuitPressed()

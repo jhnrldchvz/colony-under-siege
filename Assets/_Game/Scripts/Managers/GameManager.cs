@@ -88,7 +88,8 @@ public class GameManager : MonoBehaviour
         Paused,
         GameOver,
         Win,
-        Instructions   // Pre-game slideshow — all input blocked, ESC has no effect
+        Instructions,  // Pre-game instructions — all input blocked, ESC has no effect
+        Storyboard     // Narrative slides — shown before instructions and after final boss
     }
 
     // Read-only from outside — only GameManager changes state
@@ -224,6 +225,55 @@ public class GameManager : MonoBehaviour
         onGameResumed?.Invoke();       // Tell UIManager to hide pause panel
 
         Debug.Log("[GameManager] Game Resumed.");
+    }
+
+    // ---------------------------------------------------------------
+    // Storyboard State
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Enters the Storyboard state (narrative slides before instructions or after boss).
+    /// Freezes time, unlocks cursor, blocks all gameplay input — ESC ignored.
+    /// Valid from: Playing or Win.
+    /// </summary>
+    public void StartStoryboard()
+    {
+        if (CurrentState != GameState.Playing && CurrentState != GameState.Win) return;
+
+        Time.timeScale   = 0f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+
+        SetState(GameState.Storyboard);
+        Debug.Log("[GameManager] Storyboard started.");
+    }
+
+    /// <summary>
+    /// Exits intro Storyboard → Playing. UIManager then chains into Instructions or HUD.
+    /// </summary>
+    public void EndStoryboard()
+    {
+        if (CurrentState != GameState.Storyboard) return;
+
+        Time.timeScale   = 1f;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible   = false;
+
+        SetState(GameState.Playing);
+        Debug.Log("[GameManager] Storyboard dismissed — transitioning to gameplay.");
+    }
+
+    /// <summary>
+    /// Exits win-outro Storyboard → Win state.
+    /// Does NOT restore timeScale or lock cursor — the win panel needs them as-is.
+    /// Called by UIManager after the last win-outro slide is dismissed.
+    /// </summary>
+    public void EndWinStoryboard()
+    {
+        if (CurrentState != GameState.Storyboard) return;
+        // Stay frozen — win panel takes over from here
+        SetState(GameState.Win);
+        Debug.Log("[GameManager] Win storyboard dismissed — showing win panel.");
     }
 
     // ---------------------------------------------------------------

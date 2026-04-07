@@ -136,6 +136,9 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
+        // Save progress at the NEXT scene so Continue resumes there
+        SaveManager.Instance?.SaveProgress(nextSceneBuildIndex);
+
         Debug.Log($"[LevelManager] Loading next scene: index {nextSceneBuildIndex}");
         GameManager.Instance?.LoadScene(nextSceneBuildIndex);
     }
