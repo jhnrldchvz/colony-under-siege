@@ -183,11 +183,42 @@ public class UIManager : MonoBehaviour
     public Button nextLevelButton;
     public Button mainMenuButton;
 
+    [Header("Pre-Game Instructions")]
+    [Tooltip("Root panel shown before gameplay starts — hidden after player clicks Start")]
+    public GameObject instructionPanel;
+
+    [Tooltip("Each entry = one slide. Add images and text per slide.")]
+    public InstructionSlide[] instructionSlides;
+
+    [Tooltip("Image component that displays the current slide image")]
+    public UnityEngine.UI.Image slideImage;
+
+    [Tooltip("TMP text shown below the slide image")]
+    public TMPro.TextMeshProUGUI slideBodyText;
+
+    [Tooltip("TMP showing current slide number e.g. '1 / 2'")]
+    public TMPro.TextMeshProUGUI slideCounterText;
+
+    public UnityEngine.UI.Button slideNextButton;
+    public UnityEngine.UI.Button slidePrevButton;
+    public UnityEngine.UI.Button slideStartButton;
+
+    [Header("Win Panel — Score Display")]
+    public TextMeshProUGUI scoreText;
+    public TextMeshProUGUI gradeText;
+    public TextMeshProUGUI killsText;
+    public TextMeshProUGUI accuracyText;
+    public TextMeshProUGUI timeText;
+    public TextMeshProUGUI killPointsText;
+    public TextMeshProUGUI accuracyBonusText;
+    public TextMeshProUGUI timeBonusText;
+
     // ---------------------------------------------------------------
     // Private state
     // ---------------------------------------------------------------
 
     private int              _maxHealth   = 100;
+    private int              _slideIndex  = 0;
     private PlayerController _player;
     private bool             _isReloading = false;
     private float            _blinkTimer  = 0f;
@@ -265,6 +296,7 @@ public class UIManager : MonoBehaviour
         pauseRestartButton?   .onClick.AddListener(RestartScene);
         quitButton?           .onClick.AddListener(GoToMainMenu);
         gameOverRestartButton?.onClick.AddListener(RestartScene);
+        winRestartButton?     .onClick.AddListener(RestartScene);
         nextLevelButton?      .onClick.AddListener(() => { Time.timeScale = 1f; LevelManager.Instance?.LoadNextLevel(); });
         mainMenuButton?       .onClick.AddListener(GoToMainMenu);
 
@@ -273,7 +305,15 @@ public class UIManager : MonoBehaviour
     private IEnumerator DelayedHUDInit()
     {
         yield return null; // wait one frame for inventory to settle
-        ShowHUDOnly();     // hide all indicators cleanly
+
+        if (instructionSlides != null && instructionSlides.Length > 0 && instructionPanel != null)
+        {
+            ShowInstructions();
+        }
+        else
+        {
+            ShowHUDOnly();
+        }
     }
 
     // ---------------------------------------------------------------
@@ -501,7 +541,81 @@ public class UIManager : MonoBehaviour
     // Panel visibility helpers
     // ---------------------------------------------------------------
 
-    /// <summary>Shows only the HUD. Restores any item indicators the player has collected.</summary>
+    // ---------------------------------------------------------------
+    // Pre-Game Instructions
+    // ---------------------------------------------------------------
+
+    private void ShowInstructions()
+    {
+        // Enter Instructions state — freezes time, unlocks cursor, blocks all gameplay input.
+        // ESC has no effect in this state (GameManager.Update ignores it).
+        GameManager.Instance?.StartInstructions();
+
+        // Hide all panels — show only instruction panel
+        if (hudPanel          != null) hudPanel.SetActive(false);
+        if (pausePanel        != null) pausePanel.SetActive(false);
+        if (gameOverPanel     != null) gameOverPanel.SetActive(false);
+        if (winPanel          != null) winPanel.SetActive(false);
+        if (instructionPanel  != null) instructionPanel.SetActive(true);
+
+        // Wire buttons
+        slideNextButton?  .onClick.RemoveAllListeners();
+        slidePrevButton?  .onClick.RemoveAllListeners();
+        slideStartButton? .onClick.RemoveAllListeners();
+
+        slideNextButton?  .onClick.AddListener(SlideNext);
+        slidePrevButton?  .onClick.AddListener(SlidePrev);
+        slideStartButton? .onClick.AddListener(SlideStart);
+
+        _slideIndex = 0;
+        RefreshSlide();
+    }
+
+    private void RefreshSlide()
+    {
+        if (instructionSlides == null || instructionSlides.Length == 0) return;
+
+        _slideIndex = Mathf.Clamp(_slideIndex, 0, instructionSlides.Length - 1);
+        InstructionSlide slide = instructionSlides[_slideIndex];
+
+        if (slideImage      != null) slideImage.sprite  = slide.image;
+        if (slideBodyText   != null) slideBodyText.text  = slide.bodyText;
+        if (slideCounterText != null)
+            slideCounterText.text = $"{_slideIndex + 1} / {instructionSlides.Length}";
+
+        // Navigation button visibility
+        bool isFirst = _slideIndex == 0;
+        bool isLast  = _slideIndex == instructionSlides.Length - 1;
+
+        // Prev only shows when not on first slide
+        if (slidePrevButton  != null) slidePrevButton.gameObject.SetActive(!isFirst);
+
+        // Next hides on last slide, Start shows on last slide
+        if (slideNextButton  != null) slideNextButton.gameObject.SetActive(!isLast);
+        if (slideStartButton != null) slideStartButton.gameObject.SetActive(isLast);
+    }
+
+    private void SlideNext()
+    {
+        _slideIndex++;
+        RefreshSlide();
+    }
+
+    private void SlidePrev()
+    {
+        _slideIndex--;
+        RefreshSlide();
+    }
+
+    private void SlideStart()
+    {
+        if (instructionPanel != null) instructionPanel.SetActive(false);
+
+        // Transition from Instructions → Playing: restores timeScale, locks cursor, fires OnStateChanged
+        GameManager.Instance?.EndInstructions();
+        ShowHUDOnly();
+    }
+
     private void ShowHUDOnly()
     {
         SetPanel(hudPanel,      true);
@@ -560,6 +674,13 @@ public class UIManager : MonoBehaviour
         SetPanel(winPanel,      true);
 
         SetCrosshair(false);
+        Time.timeScale = 0f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+
+        // Stop score timer and populate score display
+        ScoreManager.Instance?.StopTimer();
+        PopulateScoreDisplay();
 
         if (winMessageText != null)
             winMessageText.text = "Stage complete.\nThe colony survives — for now.";
@@ -570,6 +691,33 @@ public class UIManager : MonoBehaviour
             nextLevelButton.gameObject.SetActive(false);
 
         Debug.Log("[UIManager] Win screen shown.");
+    }
+
+    // ---------------------------------------------------------------
+    // Score display
+    // ---------------------------------------------------------------
+
+    private void PopulateScoreDisplay()
+    {
+        if (ScoreManager.Instance == null) return;
+
+        ScoreManager.ScoreData s = ScoreManager.Instance.Calculate();
+
+        if (scoreText         != null) scoreText.text         = $"{s.totalScore:N0}";
+        if (gradeText         != null) gradeText.text         = s.grade;
+        if (killsText         != null) killsText.text         = $"Kills: {s.kills}";
+        if (accuracyText      != null) accuracyText.text      = $"Accuracy: {s.accuracyPct:F0}%";
+        if (timeText          != null) timeText.text          = $"Time: {FormatTime(s.elapsedSeconds)}";
+        if (killPointsText    != null) killPointsText.text    = $"+{s.killPoints}";
+        if (accuracyBonusText != null) accuracyBonusText.text = $"+{s.accuracyBonus}";
+        if (timeBonusText     != null) timeBonusText.text     = $"+{s.timeBonus}";
+    }
+
+    private string FormatTime(float seconds)
+    {
+        int m  = (int)(seconds / 60);
+        int s2 = (int)(seconds % 60);
+        return $"{m:00}:{s2:00}";
     }
 
     // ---------------------------------------------------------------

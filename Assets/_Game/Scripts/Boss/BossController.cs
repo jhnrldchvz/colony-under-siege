@@ -69,7 +69,7 @@ public class BossController : MonoBehaviour, IDamageable, IEnemy
     // Private
     // ---------------------------------------------------------------
 
-    public enum BossState { Idle, Chase, Attack, Jump, Heal, Dead }
+    public enum BossState { Idle, Chase, Attack, Jump, Dead }
 
     private BossState _state        = BossState.Idle;
     private int       _currentHealth;
@@ -118,10 +118,11 @@ public class BossController : MonoBehaviour, IDamageable, IEnemy
         foreach (SkinnedMeshRenderer smr in GetComponentsInChildren<SkinnedMeshRenderer>(true))
         {
             smr.updateWhenOffscreen = true;
-            Bounds b = smr.localBounds;
-            b.Expand(new Vector3(2f, 3f, 2f));
-            smr.localBounds = b;
+
+            // Greatly expand bounds so frustum culling never hides the boss
+            smr.localBounds = new Bounds(Vector3.zero, new Vector3(10f, 10f, 10f));
         }
+        Debug.Log($"[Boss] Culling fixed on {GetComponentsInChildren<SkinnedMeshRenderer>(true).Length} renderers.");
     }
 
     private void OnDestroy() => EnemyManager.Instance?.DeregisterEnemy(this);
@@ -134,13 +135,13 @@ public class BossController : MonoBehaviour, IDamageable, IEnemy
         _attackTimer -= Time.deltaTime;
         _chargeTimer -= Time.deltaTime;
 
-        if (_phase2Active && _state == BossState.Chase)
+        if (_phase2Active)
         {
             _healTimer -= Time.deltaTime;
             if (_healTimer <= 0f)
             {
                 _healTimer = healInterval;
-                StartCoroutine(AutoHeal());
+                if (IsAlive) StartCoroutine(AutoHeal());
             }
         }
 
@@ -333,23 +334,22 @@ public class BossController : MonoBehaviour, IDamageable, IEnemy
 
     private IEnumerator AutoHeal()
     {
-        if (!IsAlive || !_agent.isOnNavMesh) yield break;
+        // Bail immediately if boss is dead or agent not ready
+        if (!IsAlive) yield break;
+        if (!AgentReady()) yield break;
 
-        SetState(BossState.Heal);
         _agent.isStopped = true;
         _anim?.TriggerHeal();
 
-        float clipLen = _anim != null ? _anim.GetClipLength("flex", 4f) : 4f;
-        yield return new WaitForSeconds(clipLen);
+        yield return new WaitForSeconds(1f);
 
-        if (!IsAlive || !_agent.isOnNavMesh) yield break;
+        if (!IsAlive || !AgentReady()) yield break;
 
         _currentHealth = Mathf.Min(_currentHealth + healAmount, maxHealth);
         bossHealthBar?.UpdateHealth(_currentHealth, maxHealth);
         Debug.Log($"[Boss] Auto-healed +{healAmount}. HP: {_currentHealth}/{maxHealth}");
 
-        _agent.isStopped = false;
-        SetState(BossState.Chase);
+        if (AgentReady()) _agent.isStopped = false;
     }
 
     // ---------------------------------------------------------------
@@ -393,22 +393,31 @@ public class BossController : MonoBehaviour, IDamageable, IEnemy
 
     private void Die()
     {
+        ScoreManager.Instance?.ReportKill(gameObject.name);
         SetState(BossState.Dead);
-        StopAllCoroutines(); // cancel AutoHeal / PerformJump / PerformAttack
-        _agent.isStopped = true;
+        StopAllCoroutines(); // Cancel AutoHeal and PerformJump coroutines
+        if (AgentReady()) _agent.isStopped = true;
         _anim?.TriggerDie();
         SFXManager.Instance?.PlayEnemyDeathAt(transform.position);
         EnemyManager.Instance?.DeregisterEnemy(this);
 
         TestMetricsCollector.Instance?.RecordFSMTransition(gameObject.name, "Alive", "Dead");
         Debug.Log("[Boss] Reactor Guardian defeated!");
-        StartCoroutine(DefeatSequence()); // restarted after StopAllCoroutines
+        StartCoroutine(DefeatSequence());
     }
 
     private IEnumerator DefeatSequence()
     {
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(2f);
         onBossDefeated?.Invoke();
+
+        yield return new WaitForSeconds(1f);
+
+        // Stage [5] only — trigger win panel with full score display
+        if (GameManager.Instance != null)
+            GameManager.Instance.TriggerStageWin();
+        else
+            Debug.LogWarning("[Boss] GameManager not found — win not triggered.");
     }
 
     // ---------------------------------------------------------------
@@ -419,9 +428,12 @@ public class BossController : MonoBehaviour, IDamageable, IEnemy
 
     private void ResumeAgent()
     {
-        _agent.enabled   = true;
-        _agent.isStopped = false;
+        _agent.enabled = true;
+        if (AgentReady()) _agent.isStopped = false;
     }
+
+    private bool AgentReady() =>
+        _agent != null && _agent.isActiveAndEnabled && _agent.isOnNavMesh;
 
     // ---------------------------------------------------------------
     // Gizmos

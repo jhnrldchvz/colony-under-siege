@@ -89,7 +89,7 @@ public class ObjectiveRuntime
     public string GetDisplayText()
     {
         if (IsComplete)
-            return $"✓ {Data.objectiveText}";
+            return $"[DONE] {Data.objectiveText}";
 
         switch (Data.type)
         {

@@ -270,7 +270,6 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
                     randPos, out hit, patrolRadius, UnityEngine.AI.NavMesh.AllAreas))
             {
                 _agent.speed = patrolSpeed;
-                if (_agent.isActiveAndEnabled && _agent.isOnNavMesh)
                 _agent.SetDestination(hit.position);
                 _hasDestination = true;
                 return;
@@ -317,8 +316,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
             {
                 // Too far — close in to preferred range
                 _agent.speed = chaseSpeed;
-                if (_agent.isActiveAndEnabled && _agent.isOnNavMesh)
-            _agent.SetDestination(_player.transform.position);
+                _agent.SetDestination(_player.transform.position);
             }
             else
             {
@@ -356,8 +354,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
             }
             else
             {
-                if (_agent.isActiveAndEnabled && _agent.isOnNavMesh)
-            _agent.SetDestination(_player.transform.position);
+                _agent.SetDestination(_player.transform.position);
             }
         }
 
@@ -523,8 +520,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
                 break;
             case EnemyState.Return:
                 _agent.speed = patrolSpeed;
-                if (_agent.isActiveAndEnabled && _agent.isOnNavMesh)
-                    _agent.SetDestination(_spawnPoint);
+                _agent.SetDestination(_spawnPoint);
                 break;
         }
 
@@ -685,6 +681,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
 
     private void Die()
     {
+        ScoreManager.Instance?.ReportKill(gameObject.name);
         if (!IsAlive) return;
 
         IsAlive = false;

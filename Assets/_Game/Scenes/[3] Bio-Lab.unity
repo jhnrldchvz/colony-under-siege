@@ -5015,7 +5015,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &240486842
 RectTransform:
   m_ObjectHideFlags: 0
@@ -18193,7 +18193,7 @@ MonoBehaviour:
   objectiveText: {fileID: 1681010494}
   crosshair: {fileID: 1989157719}
   reloadIndicator: {fileID: 240486841}
-  reloadBlinkSpeed: 4
+  reloadBlinkSpeed: 3
   keyItemIndicator: {fileID: 1182225076}
   keyItemIcon: {fileID: 1277180067}
   keyItemText: {fileID: 931295229}
@@ -18226,6 +18226,22 @@ MonoBehaviour:
   winRestartButton: {fileID: 0}
   nextLevelButton: {fileID: 1353385351}
   mainMenuButton: {fileID: 174160854}
+  instructionPanel: {fileID: 0}
+  instructionSlides: []
+  slideImage: {fileID: 0}
+  slideBodyText: {fileID: 0}
+  slideCounterText: {fileID: 0}
+  slideNextButton: {fileID: 0}
+  slidePrevButton: {fileID: 0}
+  slideStartButton: {fileID: 0}
+  scoreText: {fileID: 0}
+  gradeText: {fileID: 0}
+  killsText: {fileID: 0}
+  accuracyText: {fileID: 0}
+  timeText: {fileID: 0}
+  killPointsText: {fileID: 0}
+  accuracyBonusText: {fileID: 0}
+  timeBonusText: {fileID: 0}
 --- !u!4 &956467615
 Transform:
   m_ObjectHideFlags: 0

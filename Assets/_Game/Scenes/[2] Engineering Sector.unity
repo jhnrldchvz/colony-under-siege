@@ -22693,7 +22693,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &900350633
 RectTransform:
   m_ObjectHideFlags: 0
@@ -38988,7 +38988,7 @@ MonoBehaviour:
   objectiveText: {fileID: 1558393511}
   crosshair: {fileID: 795775926}
   reloadIndicator: {fileID: 900350632}
-  reloadBlinkSpeed: 4
+  reloadBlinkSpeed: 3
   keyItemIndicator: {fileID: 1711583407}
   keyItemIcon: {fileID: 713833399}
   keyItemText: {fileID: 1191832077}
@@ -38998,6 +38998,11 @@ MonoBehaviour:
   powerCell2Indicator: {fileID: 451639271}
   powerCell2Icon: {fileID: 1569319511}
   powerCell2Text: {fileID: 987774066}
+  deactivationDeviceIndicator: {fileID: 0}
+  deactivationDeviceIcon: {fileID: 0}
+  deactivationDeviceText: {fileID: 0}
+  healingWarningBanner: {fileID: 0}
+  healingWarningText: {fileID: 0}
   pauseOverlay: {fileID: 1862632390}
   resumeButton: {fileID: 860991955}
   pauseRestartButton: {fileID: 673575879}
@@ -39016,6 +39021,22 @@ MonoBehaviour:
   winRestartButton: {fileID: 0}
   nextLevelButton: {fileID: 570351045}
   mainMenuButton: {fileID: 409745308}
+  instructionPanel: {fileID: 0}
+  instructionSlides: []
+  slideImage: {fileID: 0}
+  slideBodyText: {fileID: 0}
+  slideCounterText: {fileID: 0}
+  slideNextButton: {fileID: 0}
+  slidePrevButton: {fileID: 0}
+  slideStartButton: {fileID: 0}
+  scoreText: {fileID: 0}
+  gradeText: {fileID: 0}
+  killsText: {fileID: 0}
+  accuracyText: {fileID: 0}
+  timeText: {fileID: 0}
+  killPointsText: {fileID: 0}
+  accuracyBonusText: {fileID: 0}
+  timeBonusText: {fileID: 0}
 --- !u!4 &1560169989
 Transform:
   m_ObjectHideFlags: 0

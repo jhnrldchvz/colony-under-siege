@@ -130,9 +130,17 @@ public class WeaponController : MonoBehaviour
     private void OnEnable()
     {
         _inputs.Player.Enable();
-        _inputs.Player.Fire.performed  += ctx => _fireHeld = true;
+        _inputs.Player.Fire.performed  += ctx =>
+        {
+            if (GameManager.Instance == null || GameManager.Instance.IsPlaying())
+                _fireHeld = true;
+        };
         _inputs.Player.Fire.canceled   += ctx => _fireHeld = false;
-        _inputs.Player.Reload.performed += ctx => TryReload();
+        _inputs.Player.Reload.performed += ctx =>
+        {
+            if (GameManager.Instance == null || GameManager.Instance.IsPlaying())
+                TryReload();
+        };
     }
 
     private void OnDisable()
@@ -163,6 +171,13 @@ public class WeaponController : MonoBehaviour
     {
         if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
         if (playerController != null && !playerController.IsAlive) return;
+
+        // Clear fire held if game is not playing (safety net for Input System)
+        if (_fireHeld && (GameManager.Instance == null || !GameManager.Instance.IsPlaying()))
+        {
+            _fireHeld = false;
+            return;
+        }
 
         if (Input.GetKeyDown(KeyCode.Alpha1)) SwitchToIndex(0);
         if (Input.GetKeyDown(KeyCode.Alpha2)) SwitchToIndex(1);
@@ -279,6 +294,8 @@ public class WeaponController : MonoBehaviour
 
         if (DifficultyManager.Instance != null)
             DifficultyManager.Instance.ReportShot(hitEnemy);
+
+        ScoreManager.Instance?.ReportShot(hitEnemy);
     }
 
     // ---------------------------------------------------------------
@@ -369,6 +386,7 @@ public class WeaponController : MonoBehaviour
         {
             StopAllCoroutines();
             _isReloading = false;
+            UIManager.Instance?.SetReloading(false);
         }
 
         _currentWeaponIndex = index;

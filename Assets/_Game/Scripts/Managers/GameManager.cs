@@ -87,7 +87,8 @@ public class GameManager : MonoBehaviour
         Playing,
         Paused,
         GameOver,
-        Win
+        Win,
+        Instructions   // Pre-game slideshow — all input blocked, ESC has no effect
     }
 
     // Read-only from outside — only GameManager changes state
@@ -223,6 +224,44 @@ public class GameManager : MonoBehaviour
         onGameResumed?.Invoke();       // Tell UIManager to hide pause panel
 
         Debug.Log("[GameManager] Game Resumed.");
+    }
+
+    // ---------------------------------------------------------------
+    // Instructions State
+    // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Enters the pre-game instruction state.
+    /// Freezes time, unlocks cursor, and blocks all gameplay input.
+    /// ESC has no effect while in this state.
+    /// UIManager calls this at scene start when slides are configured.
+    /// </summary>
+    public void StartInstructions()
+    {
+        if (CurrentState != GameState.Playing) return;
+
+        Time.timeScale   = 0f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible   = true;
+
+        SetState(GameState.Instructions);
+        Debug.Log("[GameManager] Instructions state started.");
+    }
+
+    /// <summary>
+    /// Exits the instruction state and begins gameplay.
+    /// UIManager calls this when the player clicks Start.
+    /// </summary>
+    public void EndInstructions()
+    {
+        if (CurrentState != GameState.Instructions) return;
+
+        Time.timeScale   = 1f;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible   = false;
+
+        SetState(GameState.Playing);
+        Debug.Log("[GameManager] Instructions dismissed — gameplay started.");
     }
 
     // ---------------------------------------------------------------

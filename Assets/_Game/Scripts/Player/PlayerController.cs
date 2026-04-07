@@ -64,8 +64,20 @@ public class PlayerController : MonoBehaviour, IDamageable
     {
         yield return null;
         yield return null;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible   = false;
+
+        // Don't lock cursor if UIManager is showing pre-game instructions
+        // Instructions need visible cursor for button clicks
+        UIManager ui = FindFirstObjectByType<UIManager>();
+        bool hasInstructions = ui != null
+            && ui.instructionSlides != null
+            && ui.instructionSlides.Length > 0
+            && ui.instructionPanel != null;
+
+        if (!hasInstructions)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible   = false;
+        }
     }
 
     private void Update()
@@ -76,6 +88,9 @@ public class PlayerController : MonoBehaviour, IDamageable
         HandleLook();
         HandleInteraction();
     }
+
+    public bool IsInputBlocked =>
+        GameManager.Instance != null && !GameManager.Instance.IsPlaying();
 
     private void HandleMovement()
     {

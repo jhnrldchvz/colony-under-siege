@@ -76,9 +76,22 @@ public class ScoreManager : MonoBehaviour
 
     private void Start()
     {
-        // Subscribe to enemy kill event
+        // Subscribe per-scene — EnemyManager is per-scene, ScoreManager is persistent
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+        SubscribeToEnemyManager();
+    }
+
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene,
+                               UnityEngine.SceneManagement.LoadSceneMode mode)
+    {
+        // Re-subscribe each scene since EnemyManager is per-scene
+        SubscribeToEnemyManager();
+    }
+
+    private void SubscribeToEnemyManager()
+    {
         if (EnemyManager.Instance != null)
-            EnemyManager.Instance.OnEnemyKilled += OnEnemyKilled;
+            EnemyManager.Instance.OnEnemyKilled += OnEnemyKilledCount;
     }
 
     private void Update()
@@ -89,8 +102,9 @@ public class ScoreManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
         if (EnemyManager.Instance != null)
-            EnemyManager.Instance.OnEnemyKilled -= OnEnemyKilled;
+            EnemyManager.Instance.OnEnemyKilled -= OnEnemyKilledCount;
         if (Instance == this) Instance = null;
     }
 
@@ -159,27 +173,28 @@ public class ScoreManager : MonoBehaviour
     // Private
     // ---------------------------------------------------------------
 
-    private void OnEnemyKilled(IEnemy enemy)
+    // Called by EnemyManager.OnEnemyKilled (passes kill count, not enemy ref)
+    private void OnEnemyKilledCount(int killCount)
     {
         TotalKills++;
-        int pts = GetKillPoints(enemy);
-        RawKillPoints += pts;
-        Debug.Log($"[ScoreManager] Kill +{pts}. Total kills: {TotalKills}, Kill pts: {RawKillPoints}");
+        // Award generic points per kill — enemy type not available from this event
+        RawKillPoints += pointsGeneric;
+        Debug.Log($"[ScoreManager] Kill +{pointsGeneric}. Total: {TotalKills}");
     }
 
-    private int GetKillPoints(IEnemy enemy)
+    /// <summary>Call directly when a named enemy dies for accurate type-based points.</summary>
+    public void ReportKill(string enemyName)
     {
-        if (enemy == null) return pointsGeneric;
-        GameObject go = (enemy as MonoBehaviour)?.gameObject;
-        if (go == null) return pointsGeneric;
-
-        string name = go.name.ToLower();
-        if (name.Contains("boss"))       return pointsBoss;
-        if (name.Contains("berserker"))  return pointsBerserker;
-        if (name.Contains("mutant"))     return pointsMutant;
-        if (name.Contains("scout"))      return pointsScout;
-        if (name.Contains("grunt"))      return pointsGrunt;
-        return pointsGeneric;
+        TotalKills++;
+        string n = enemyName.ToLower();
+        int pts = n.Contains("boss")      ? pointsBoss
+                : n.Contains("berserker") ? pointsBerserker
+                : n.Contains("mutant")    ? pointsMutant
+                : n.Contains("scout")     ? pointsScout
+                : n.Contains("grunt")     ? pointsGrunt
+                : pointsGeneric;
+        RawKillPoints += pts;
+        Debug.Log($"[ScoreManager] Kill '{enemyName}' +{pts}. Total: {TotalKills}, Pts: {RawKillPoints}");
     }
 
     private string GetGrade(int score)
