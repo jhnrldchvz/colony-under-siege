@@ -567,19 +567,31 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 7425032206536070415, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       propertyPath: m_Name
-      value: Biomech_Mutant_Skin_2_bloody Variant
+      value: Enemy_Mutant
+      objectReference: {fileID: 0}
+    - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.5174364
+      objectReference: {fileID: 0}
+    - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.5174364
+      objectReference: {fileID: 0}
+    - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.5174364
       objectReference: {fileID: 0}
     - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.7768552
+      value: -59.336
       objectReference: {fileID: 0}
     - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.009999973
+      value: -0.17003
       objectReference: {fileID: 0}
     - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.439782
+      value: -3.9299998
       objectReference: {fileID: 0}
     - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       propertyPath: m_LocalRotation.w
@@ -587,15 +599,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -613,7 +625,9 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 9a4a764715bbd31139cb2ac39214fa0e, type: 2}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5013834604108991437, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
+    - {fileID: 7317672963156194387, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 7425032206536231151, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
@@ -632,12 +646,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7425032206536070415, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8194651285113446973}
-    - targetCorrespondingSourceObject: {fileID: 7425032206536070415, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 437951282386622436}
-    - targetCorrespondingSourceObject: {fileID: 7425032206536070415, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 6091674721282915062}
   m_SourcePrefab: {fileID: 100100000, guid: bf305a5598f882b4facd6c8c44530a10, type: 3}
 --- !u!95 &87213745167061904 stripped
 Animator:
@@ -720,39 +728,3 @@ MonoBehaviour:
   paramAttack2: Attack2
   attack2Chance: 0.4
   attackHitDelay: 1.5
---- !u!114 &437951282386622436
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 87213745174454778}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
-  damageableTarget: {fileID: 0}
---- !u!136 &6091674721282915062
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 87213745174454778}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.18
-  m_Height: 1.8
-  m_Direction: 1
-  m_Center: {x: 0, y: 1, z: 0}

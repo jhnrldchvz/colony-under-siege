@@ -245,10 +245,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 984376809}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &11493296 stripped
 Transform:
@@ -1648,6 +1655,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 410132, guid: a3a28df7da6da4deea03a2a2f34a54ac, type: 3}
   m_PrefabInstance: {fileID: 87159513}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &87976652 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 803640048}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &94620315
 PrefabInstance:
@@ -5462,6 +5474,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5cc345f83c1c34ef0940b7b0d21cdba2, type: 3}
+--- !u!1 &260529502 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 513612307}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &262260999 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400004, guid: fedf50d65fc79434b89f634a6cba8fb2, type: 3}
@@ -6808,6 +6825,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 320016440}
   m_CullTransparentMesh: 1
+--- !u!1 &330858635 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 1192503574}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &331121041
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7841,10 +7863,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2001107639}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &391934868 stripped
 Transform:
@@ -8200,6 +8229,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4302838756563234, guid: 9c497fb69241f2244b41ccc375bc8606, type: 3}
   m_PrefabInstance: {fileID: 411641665}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &413063697 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 2100146086}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &414728464
 PrefabInstance:
@@ -8981,6 +9015,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: 22fc62775f090453b8a270508d2df1a0, type: 3}
   m_PrefabInstance: {fileID: 447850786}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &453600959 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 1002962045}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &456800118
 PrefabInstance:
@@ -10248,13 +10287,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 513612312}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &513612308 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7891308568017656659, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
   m_PrefabInstance: {fileID: 513612307}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &513612312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 260529502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &518566852
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11113,6 +11168,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7594111701738883318, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8311566073086101480, guid: 815ed555215dd0feb93a44b6967ed89d, type: 3}
       propertyPath: m_LocalPosition.x
       value: -7.90671
@@ -11794,6 +11853,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1834633598}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &569792629 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 1873729286}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &569818665 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 427384, guid: 271b42eb6bd664960b8dff0a6433bb1d, type: 3}
@@ -12940,10 +13004,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1291893390}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &644670621 stripped
 Transform:
@@ -13552,6 +13623,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 499859e5622b54c9ca6e44760a2fcde2, type: 3}
+--- !u!1 &707185722 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 1833258540}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &709270544
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13857,7 +13933,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1332060529}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &726054898 stripped
 Transform:
@@ -14857,7 +14936,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1685758299}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &779524287 stripped
 Transform:
@@ -15311,13 +15393,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 803640053}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &803640049 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7891308568017656659, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
   m_PrefabInstance: {fileID: 803640048}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &803640053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 87976652}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &806443122
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15373,7 +15471,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1178014066}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &806443123 stripped
 Transform:
@@ -16064,6 +16165,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 858193132}
   m_CullTransparentMesh: 1
+--- !u!1 &860292237 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 1093883186}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &862333086
 GameObject:
   m_ObjectHideFlags: 0
@@ -16811,7 +16917,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1580743717}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &891088531 stripped
 Transform:
@@ -17038,7 +17147,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1140038751}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &904955737 stripped
 Transform:
@@ -17179,6 +17291,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 271b42eb6bd664960b8dff0a6433bb1d, type: 3}
+--- !u!1 &920742307 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 1308392385}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &926978822
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18086,6 +18203,11 @@ MonoBehaviour:
   powerCell2Indicator: {fileID: 1879999942}
   powerCell2Icon: {fileID: 1694746314}
   powerCell2Text: {fileID: 1280536082}
+  deactivationDeviceIndicator: {fileID: 0}
+  deactivationDeviceIcon: {fileID: 0}
+  deactivationDeviceText: {fileID: 0}
+  healingWarningBanner: {fileID: 0}
+  healingWarningText: {fileID: 0}
   pauseOverlay: {fileID: 224599929}
   resumeButton: {fileID: 1698273308}
   pauseRestartButton: {fileID: 2131394937}
@@ -18748,6 +18870,24 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fedf50d65fc79434b89f634a6cba8fb2, type: 3}
+--- !u!1 &984376798 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 11493295}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &984376809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 984376798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &984544467
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18815,6 +18955,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 400004, guid: fedf50d65fc79434b89f634a6cba8fb2, type: 3}
   m_PrefabInstance: {fileID: 984544467}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &986768605 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 1782332471}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &988009920
 PrefabInstance:
@@ -19068,13 +19213,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1002962050}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &1002962046 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7891308568017656659, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
   m_PrefabInstance: {fileID: 1002962045}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1002962050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 453600959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &1003154088
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20322,16 +20483,36 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1093883198}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &1093883187 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
   m_PrefabInstance: {fileID: 1093883186}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1093883198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 860292237}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &1097559310
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20901,10 +21082,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1302423632}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &1126643617 stripped
 Transform:
@@ -21147,7 +21335,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2062816126}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &1134668842 stripped
 Transform:
@@ -21269,6 +21460,29 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: -20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &1140038747 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 904955736}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1140038751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140038747}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
+--- !u!1 &1140686835 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 1462403955}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1143572055
 GameObject:
   m_ObjectHideFlags: 0
@@ -22238,6 +22452,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1177830596}
   m_CullTransparentMesh: 1
+--- !u!1 &1178014062 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 806443122}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1178014066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178014062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &1180619425
 GameObject:
   m_ObjectHideFlags: 0
@@ -22477,13 +22709,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1192503579}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &1192503575 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7891308568017656659, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
   m_PrefabInstance: {fileID: 1192503574}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1192503579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330858635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &1194542944
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22681,10 +22929,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2095424599}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &1201511105 stripped
 Transform:
@@ -24725,6 +24980,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 427384, guid: 271b42eb6bd664960b8dff0a6433bb1d, type: 3}
   m_PrefabInstance: {fileID: 1290727486}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1291893379 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 644670620}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1291893390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1291893379}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &1296007721
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24787,6 +25060,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: 5cc345f83c1c34ef0940b7b0d21cdba2, type: 3}
   m_PrefabInstance: {fileID: 1296007721}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1302423621 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 1126643616}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1302423632
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1302423621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &1305029304
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24899,13 +25190,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1308392390}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &1308392386 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7891308568017656659, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
   m_PrefabInstance: {fileID: 1308392385}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1308392390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 920742307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &1309768847
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25431,6 +25738,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1328207722}
   m_CullTransparentMesh: 1
+--- !u!1 &1332060525 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 726054897}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1332060529
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1332060525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &1338154028
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25439,18 +25764,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1812894562}
     m_Modifications:
-    - target: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1.5174364
-      objectReference: {fileID: 0}
-    - target: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1.5174364
-      objectReference: {fileID: 0}
-    - target: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1.5174364
-      objectReference: {fileID: 0}
     - target: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
       propertyPath: m_LocalPosition.x
       value: -54.591003
@@ -25494,6 +25807,10 @@ PrefabInstance:
     - target: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
       propertyPath: m_Name
       value: Enemy_Mutant (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -27787,13 +28104,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1462403960}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &1462403956 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7891308568017656659, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
   m_PrefabInstance: {fileID: 1462403955}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1462403960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140686835}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &1465747826
 GameObject:
   m_ObjectHideFlags: 0
@@ -30298,6 +30631,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8279299618181505845, guid: 79a7c865f08dc7196937b81bf1034b1f, type: 3}
   m_PrefabInstance: {fileID: 1577205177}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1580743713 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 891088530}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1580743717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1580743713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &1581278528
 GameObject:
   m_ObjectHideFlags: 0
@@ -31860,6 +32211,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9200765588226183118, guid: 1eb2cd712ed918e22adf7f65b0df8a68, type: 3}
   m_PrefabInstance: {fileID: 1668932613}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1670816849 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 2136314826}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1674485545
 GameObject:
   m_ObjectHideFlags: 0
@@ -32026,18 +32382,6 @@ PrefabInstance:
     m_TransformParent: {fileID: 1812894562}
     m_Modifications:
     - target: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1.5174364
-      objectReference: {fileID: 0}
-    - target: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1.5174364
-      objectReference: {fileID: 0}
-    - target: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1.5174364
-      objectReference: {fileID: 0}
-    - target: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
       propertyPath: m_LocalPosition.x
       value: -59.336
       objectReference: {fileID: 0}
@@ -32080,6 +32424,10 @@ PrefabInstance:
     - target: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
       propertyPath: m_Name
       value: Enemy_Mutant
+      objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -32297,6 +32645,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: 61485a9a68e6845828d6e61f3d353298, type: 3}
   m_PrefabInstance: {fileID: 1685034838}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1685758295 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 779524286}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1685758299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1685758295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &1685972234
 GameObject:
   m_ObjectHideFlags: 0
@@ -32463,10 +32829,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1944595730}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &1688359395 stripped
 Transform:
@@ -33487,6 +33860,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1726694672}
   m_CullTransparentMesh: 1
+--- !u!1 &1728437488 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 1755515668}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1731894579
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33879,16 +34257,36 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1755515680}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &1755515669 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
   m_PrefabInstance: {fileID: 1755515668}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1755515680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1728437488}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &1756602461
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -34026,13 +34424,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1782332476}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &1782332472 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7891308568017656659, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
   m_PrefabInstance: {fileID: 1782332471}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1782332476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 986768605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!4 &1789209947 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: 5cc345f83c1c34ef0940b7b0d21cdba2, type: 3}
@@ -34865,16 +35279,36 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1833258552}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &1833258541 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
   m_PrefabInstance: {fileID: 1833258540}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1833258552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 707185722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &1834633597
 GameObject:
   m_ObjectHideFlags: 0
@@ -35623,16 +36057,36 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1873729298}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &1873729287 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
   m_PrefabInstance: {fileID: 1873729286}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1873729298
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 569792629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &1874669668
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36461,6 +36915,24 @@ MonoBehaviour:
   shotsFiredText: {fileID: 964315315}
   shotsHitText: {fileID: 1465747828}
   refreshRate: 0.2
+--- !u!1 &1944595719 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 1688359394}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1944595730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1944595719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &1947454590
 GameObject:
   m_ObjectHideFlags: 0
@@ -37563,6 +38035,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5046801395915197, guid: 8c8f7a0ce5ba3e97fa63fcef53f6034f, type: 3}
   m_PrefabInstance: {fileID: 1825786428}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2001107628 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 391934867}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2001107639
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2001107628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1 &2005950631
 GameObject:
   m_ObjectHideFlags: 0
@@ -38672,6 +39162,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: 5cc345f83c1c34ef0940b7b0d21cdba2, type: 3}
   m_PrefabInstance: {fileID: 2062504463}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2062816122 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+  m_PrefabInstance: {fileID: 1134668841}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2062816126
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2062816122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &2065280521
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -39079,6 +39587,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 713255272}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2095424588 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+  m_PrefabInstance: {fileID: 1201511104}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2095424599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2095424588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &2096813599
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -39217,16 +39743,36 @@ PrefabInstance:
       propertyPath: m_Name
       value: Enemy_Mutant (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 3985357756159446809, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      propertyPath: sightBlockLayers.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 87213745174454778, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2100146098}
   m_SourcePrefab: {fileID: 100100000, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
 --- !u!4 &2100146087 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 87213745173969946, guid: bfb9b49c4d2f371468264f6de2b167b7, type: 3}
   m_PrefabInstance: {fileID: 2100146086}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2100146098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 413063697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!4 &2100913963 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400004, guid: fedf50d65fc79434b89f634a6cba8fb2, type: 3}
@@ -40149,13 +40695,29 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7892837964881144105, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2136314831}
   m_SourcePrefab: {fileID: 100100000, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
 --- !u!4 &2136314827 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7891308568017656659, guid: 4995785387cb0ddf59111fd9b7391026, type: 3}
   m_PrefabInstance: {fileID: 2136314826}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2136314831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1670816849}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67c90451a9c5be15fa4cb023365cdd8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageRelay
+  damageableTarget: {fileID: 0}
 --- !u!1001 &2139327003
 PrefabInstance:
   m_ObjectHideFlags: 0

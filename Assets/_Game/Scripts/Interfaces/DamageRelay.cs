@@ -31,12 +31,27 @@ public class DamageRelay : MonoBehaviour, IDamageable
             return;
         }
 
-        // Walk up the hierarchy to find IDamageable on any parent
-        Transform t = transform.parent;
+        // Check current GO first, then walk up the hierarchy
+        Transform t = transform;
         while (t != null)
         {
-            _target = t.GetComponent<IDamageable>();
-            if (_target != null) break;
+            // Skip self — avoid infinite loop (DamageRelay itself implements IDamageable)
+            if (t != transform)
+            {
+                _target = t.GetComponent<IDamageable>();
+                if (_target != null) break;
+            }
+            else
+            {
+                // On self: only find non-DamageRelay IDamageable (e.g. EnemyAI on same GO)
+                foreach (var comp in t.GetComponents<IDamageable>())
+                {
+                    if (comp is DamageRelay) continue;
+                    _target = comp;
+                    break;
+                }
+                if (_target != null) break;
+            }
             t = t.parent;
         }
 
