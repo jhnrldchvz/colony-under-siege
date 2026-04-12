@@ -92,7 +92,7 @@ public class ObjectivePickup : MonoBehaviour
         _collected = true;
         InventoryManager.Instance.AddKeyItem(itemId);
 
-        // UIManager.OnKeyItemCollected routes by itemId automatically
+        // UIManager.OnKeyItemCollected routes by itemId automatically  
         // For generic key items (not power cells / deactivation tool),
         // also pass the display name so HUD shows correct label
         UIManager.Instance?.ShowKeyItemByIdAndName(itemId, displayName);

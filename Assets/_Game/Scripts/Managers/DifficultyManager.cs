@@ -1,174 +1,200 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// DifficultyManager — Dynamic Difficulty Adjustment (DDA) system.
+/// DifficultyManager — Fuzzy Logic Dynamic Difficulty Adjustment (FL-DDA).
 ///
-/// Tracks player accuracy over a rolling evaluation window.
-/// When accuracy crosses a threshold, all living enemies are
-/// upgraded or downgraded to match the new difficulty tier.
-///
-/// Tiers:
-///   Easy   — accuracy below easyThreshold   (default 30%)
-///   Normal — accuracy between easy and hard  (default 30–65%)
-///   Hard   — accuracy above hardThreshold    (default 65%)
+/// ╔═══════════════════════════════════════════════════════════════════════════╗
+/// ║  HOW IT WORKS                                                             ║
+/// ║                                                                           ║
+/// ║  Every <evaluationInterval> seconds the manager:                          ║
+/// ║    1. Samples window accuracy  (hits / shots in the window)               ║
+/// ║    2. Samples player health ratio  (currentHP / maxHP)                    ║
+/// ║    3. Feeds both into FuzzyDDA.Evaluate() → crisp score in [0, 1]        ║
+/// ║    4. Linearly interpolates all enemy stat multipliers between the        ║
+/// ║       Easy anchor (score=0) and Hard anchor (score=1) via Normal (0.5)   ║
+/// ║    5. Applies the interpolated settings to every living enemy via         ║
+/// ║       EnemyAI.ApplyDifficultySettings()                                  ║
+/// ║                                                                           ║
+/// ║  The DifficultyTier enum is kept for UI display only.  It is derived      ║
+/// ║  from the continuous score rather than driving it:                        ║
+/// ║    score < 0.35 → Easy   |   0.35–0.65 → Normal   |   > 0.65 → Hard     ║
+/// ║                                                                           ║
+/// ║  RESULT: Smooth, continuous enemy scaling with no abrupt stat jumps.      ║
+/// ╚═══════════════════════════════════════════════════════════════════════════╝
 ///
 /// Setup:
 ///   1. Create an empty GameObject named "DifficultyManager".
 ///   2. Attach this script.
-///   3. Tune thresholds and stat multipliers in the Inspector.
+///   3. Tune anchor multipliers and evaluation parameters in the Inspector.
 ///   4. WeaponController already calls ReportShot() — no extra wiring needed.
 /// </summary>
 public class DifficultyManager : MonoBehaviour
 {
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
     // Singleton
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
 
     public static DifficultyManager Instance { get; private set; }
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        // Re-apply current tier to new enemies when scene loads
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene,
-                               UnityEngine.SceneManagement.LoadSceneMode mode)
-    {
-        // Wait for enemies to register then apply persisted tier
-        StartCoroutine(ReapplyTierAfterLoad());
-    }
-
-    private System.Collections.IEnumerator ReapplyTierAfterLoad()
-    {
-        yield return null; // frame 1 — enemies register
-        yield return null; // frame 2 — safety buffer
-
-        // Reset shot window — new level, fresh accuracy sample
-        ResetWindow();
-        _evalTimer = 0f;
-
-        // Apply the persisted tier to all new enemies
-        ApplyTierToAllEnemies(CurrentTier);
-
-        Debug.Log($"[DifficultyManager] Scene loaded — persisted tier '{CurrentTier}' " +
-                  $"applied to new enemies. Accuracy window reset.");
-    }
-
-    // ---------------------------------------------------------------
-    // Difficulty tiers
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
+    // Difficulty tier (display only — derived from fuzzy score)
+    // ─────────────────────────────────────────────────────────────────────────
 
     public enum DifficultyTier { Easy, Normal, Hard }
 
+    /// <summary>Display tier derived from CurrentFuzzyScore. Triggers OnTierChanged.</summary>
     public DifficultyTier CurrentTier { get; private set; } = DifficultyTier.Normal;
 
-    // ---------------------------------------------------------------
-    // Inspector — Accuracy thresholds
-    // ---------------------------------------------------------------
+    /// <summary>
+    /// Raw fuzzy difficulty score in [0, 1].
+    /// 0 = absolute easiest   1 = absolute hardest.
+    /// Updated every evaluation interval.
+    /// </summary>
+    public float CurrentFuzzyScore { get; private set; } = 0.5f;
 
-    [Header("Accuracy Thresholds")]
-    [Tooltip("Accuracy below this = Easy tier")]
-    [Range(0f, 1f)] public float easyThreshold   = 0.30f;
+    /// <summary>Most recent intermediate fuzzy values — for debug HUD and CSV export.</summary>
+    public FuzzyDebugSnapshot LastSnapshot { get; private set; }
 
-    [Tooltip("Accuracy above this = Hard tier")]
-    [Range(0f, 1f)] public float hardThreshold    = 0.65f;
+    // ─────────────────────────────────────────────────────────────────────────
+    // Inspector — Evaluation parameters
+    // ─────────────────────────────────────────────────────────────────────────
 
-    [Tooltip("Seconds between each difficulty evaluation")]
+    [Header("Evaluation Parameters")]
+    [Tooltip("Seconds between each fuzzy evaluation cycle")]
     public float evaluationInterval = 5f;
 
-    [Tooltip("Minimum shots fired before DDA kicks in — prevents 1-shot samples")]
-    public int minShotsBeforeEval   = 5;
+    [Tooltip("Minimum shots fired in the window before DDA activates")]
+    public int minShotsBeforeEval = 5;
 
-    // ---------------------------------------------------------------
-    // Inspector — Easy tier multipliers (applied on top of each enemy's base stats)
-    // ---------------------------------------------------------------
+    [Tooltip("Score band boundaries for display tier derivation")]
+    [Range(0f, 0.5f)] public float easyBandMax  = 0.35f;   // score < this  → Easy
+    [Range(0.5f, 1f)] public float hardBandMin  = 0.65f;   // score > this  → Hard
 
-    [Header("Easy Tier — Multipliers (< 1 = weaker)")]
-    public float easyHealthMult       = 0.7f;
-    public float easyPatrolSpeedMult  = 0.8f;
-    public float easyChaseSpeedMult   = 0.7f;
-    public float easyDamageMult       = 0.6f;
-    public float easyDetectionMult    = 0.7f;
-    public float easyAttackRangeMult  = 0.9f;
-    public float easyCooldownMult     = 1.5f;  // Higher = slower attacks
+    // ─────────────────────────────────────────────────────────────────────────
+    // Inspector — EASY anchor multipliers   (score = 0.0)
+    // ─────────────────────────────────────────────────────────────────────────
 
-    // ---------------------------------------------------------------
-    // Inspector — Normal tier multipliers (1.0 = base stats unchanged)
-    // ---------------------------------------------------------------
+    [Header("Easy Anchor Multipliers  (fuzzy score = 0.0)")]
+    [Tooltip("< 1 = weaker enemy")]
+    public float easyHealthMult      = 0.70f;
+    public float easyPatrolSpeedMult = 0.80f;
+    public float easyChaseSpeedMult  = 0.70f;
+    public float easyDamageMult      = 0.60f;
+    public float easyDetectionMult   = 0.70f;
+    public float easyAttackRangeMult = 0.90f;
+    [Tooltip("> 1 = slower attacks")]
+    public float easyCooldownMult    = 1.50f;
 
-    [Header("Normal Tier — Multipliers (1.0 = base stats)")]
-    public float normalHealthMult       = 1.0f;
-    public float normalPatrolSpeedMult  = 1.0f;
-    public float normalChaseSpeedMult   = 1.0f;
-    public float normalDamageMult       = 1.0f;
-    public float normalDetectionMult    = 1.0f;
-    public float normalAttackRangeMult  = 1.0f;
-    public float normalCooldownMult     = 1.0f;
+    // ─────────────────────────────────────────────────────────────────────────
+    // Inspector — NORMAL anchor multipliers (score = 0.5)
+    // ─────────────────────────────────────────────────────────────────────────
 
-    // ---------------------------------------------------------------
-    // Inspector — Hard tier multipliers (> 1 = stronger)
-    // ---------------------------------------------------------------
+    [Header("Normal Anchor Multipliers  (fuzzy score = 0.5)")]
+    public float normalHealthMult      = 1.00f;
+    public float normalPatrolSpeedMult = 1.00f;
+    public float normalChaseSpeedMult  = 1.00f;
+    public float normalDamageMult      = 1.00f;
+    public float normalDetectionMult   = 1.00f;
+    public float normalAttackRangeMult = 1.00f;
+    public float normalCooldownMult    = 1.00f;
 
-    [Header("Hard Tier — Multipliers (> 1 = stronger)")]
-    public float hardHealthMult       = 1.5f;
-    public float hardPatrolSpeedMult  = 1.5f;
-    public float hardChaseSpeedMult   = 1.6f;
-    public float hardDamageMult       = 2.0f;
-    public float hardDetectionMult    = 1.4f;
-    public float hardAttackRangeMult  = 1.2f;
-    public float hardCooldownMult     = 0.6f;  // Lower = faster attacks
+    // ─────────────────────────────────────────────────────────────────────────
+    // Inspector — HARD anchor multipliers  (score = 1.0)
+    // ─────────────────────────────────────────────────────────────────────────
 
-    // ---------------------------------------------------------------
+    [Header("Hard Anchor Multipliers  (fuzzy score = 1.0)")]
+    [Tooltip("> 1 = stronger enemy")]
+    public float hardHealthMult      = 1.50f;
+    public float hardPatrolSpeedMult = 1.50f;
+    public float hardChaseSpeedMult  = 1.60f;
+    public float hardDamageMult      = 2.00f;
+    public float hardDetectionMult   = 1.40f;
+    public float hardAttackRangeMult = 1.20f;
+    [Tooltip("< 1 = faster attacks")]
+    public float hardCooldownMult    = 0.60f;
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Events
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
 
-    /// <summary>Fired when the difficulty tier changes. Passes the new tier.</summary>
+    /// <summary>
+    /// Fired when the display tier (Easy/Normal/Hard) changes.
+    /// DifficultyHUD subscribes to update its label.
+    /// Note: The underlying fuzzy score changes continuously — this event only
+    /// fires when the score crosses a band boundary.
+    /// </summary>
     public event Action<DifficultyTier> OnTierChanged;
 
-    // ---------------------------------------------------------------
-    // Private — accuracy tracking
-    // ---------------------------------------------------------------
+    /// <summary>
+    /// Fired every evaluation cycle regardless of tier change.
+    /// Carries the new fuzzy score and snapshot for research logging.
+    /// </summary>
+    public event Action<float, FuzzyDebugSnapshot> OnFuzzyScoreUpdated;
 
-    private int   _shotsFiredinWindow = 0;
-    private int   _shotsHitInWindow   = 0;
-    private float _evalTimer          = 0f;
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private — shot window
+    // ─────────────────────────────────────────────────────────────────────────
 
-    // Lifetime stats for display
+    private int   _shotsInWindow = 0;
+    private int   _hitsInWindow  = 0;
+    private float _evalTimer     = 0f;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Public — lifetime accuracy stats
+    // ─────────────────────────────────────────────────────────────────────────
+
     public int   TotalShotsFired { get; private set; } = 0;
     public int   TotalShotsHit   { get; private set; } = 0;
     public float LifetimeAccuracy =>
         TotalShotsFired > 0 ? (float)TotalShotsHit / TotalShotsFired : 0f;
     public float WindowAccuracy =>
-        _shotsFiredinWindow > 0
-            ? (float)_shotsHitInWindow / _shotsFiredinWindow
-            : 0f;
+        _shotsInWindow > 0 ? (float)_hitsInWindow / _shotsInWindow : 0f;
 
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
+    // Player reference (for health ratio)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private PlayerController _player;
+
+    private float HealthRatio
+    {
+        get
+        {
+            if (_player == null) return 1f;   // Default to full health if no reference
+            return _player.maxHealth > 0
+                ? Mathf.Clamp01((float)_player.CurrentHealth / _player.maxHealth)
+                : 1f;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Lifecycle
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void Start()
     {
-        // Wait one frame so all EnemyAI.Start() calls finish registering first
-        StartCoroutine(InitializeAfterEnemiesRegister());
+        StartCoroutine(InitAfterEnemiesRegister());
     }
 
-    private System.Collections.IEnumerator InitializeAfterEnemiesRegister()
+    private IEnumerator InitAfterEnemiesRegister()
     {
-        yield return null; // Wait one frame
+        yield return null;   // frame 1 — enemies call Start() and register
+        yield return null;   // frame 2 — safety buffer
 
-        ApplyTierToAllEnemies(DifficultyTier.Normal);
-        Debug.Log("[DifficultyManager] Initialized. Starting tier: Normal.");
+        CachePlayer();
+        ApplyFuzzyScoreToAllEnemies(CurrentFuzzyScore);
+        Debug.Log("[DifficultyManager] FL-DDA initialised. " +
+                  $"Starting score: {CurrentFuzzyScore:F3} | tier: {CurrentTier}");
     }
 
     private void Update()
@@ -176,7 +202,6 @@ public class DifficultyManager : MonoBehaviour
         if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
 
         _evalTimer += Time.deltaTime;
-
         if (_evalTimer >= evaluationInterval)
         {
             _evalTimer = 0f;
@@ -184,166 +209,324 @@ public class DifficultyManager : MonoBehaviour
         }
     }
 
-    // ---------------------------------------------------------------
+    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene _,
+                               UnityEngine.SceneManagement.LoadSceneMode __)
+    {
+        StartCoroutine(ReapplyAfterLoad());
+    }
+
+    private IEnumerator ReapplyAfterLoad()
+    {
+        yield return null;
+        yield return null;
+
+        ResetWindow();
+        _evalTimer = 0f;
+        CachePlayer();
+        ApplyFuzzyScoreToAllEnemies(CurrentFuzzyScore);
+
+        Debug.Log($"[DifficultyManager] Scene loaded — persisted score {CurrentFuzzyScore:F3} " +
+                  $"({CurrentTier}) applied. Window reset.");
+    }
+
+    private void CachePlayer()
+    {
+        _player = FindFirstObjectByType<PlayerController>();
+        if (_player == null)
+            Debug.LogWarning("[DifficultyManager] PlayerController not found — " +
+                             "health ratio will default to 1.0 (full health).");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Public API — called by WeaponController
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Called by WeaponController once per shot.
-    /// hitEnemy = true if the ray hit an EnemyAI, false if it missed.
+    /// <paramref name="hitEnemy"/> = true if the ray hit an EnemyAI.
     /// </summary>
     public void ReportShot(bool hitEnemy)
     {
-        _shotsFiredinWindow++;
+        _shotsInWindow++;
         TotalShotsFired++;
 
         if (hitEnemy)
         {
-            _shotsHitInWindow++;
+            _hitsInWindow++;
             TotalShotsHit++;
         }
 
-        // Report to test metrics collector if present in scene
         TestMetricsCollector.Instance?.RecordShot(hitEnemy);
 
-        Debug.Log($"[DifficultyManager] Shot reported. Window: " +
-                  $"{_shotsHitInWindow}/{_shotsFiredinWindow} " +
-                  $"({WindowAccuracy * 100f:F0}%) | " +
-                  $"Lifetime: {LifetimeAccuracy * 100f:F0}%");
+        Debug.Log($"[DifficultyManager] Shot: window {_hitsInWindow}/{_shotsInWindow} " +
+                  $"({WindowAccuracy * 100f:F0}%) | lifetime {LifetimeAccuracy * 100f:F0}%");
     }
 
-    // ---------------------------------------------------------------
-    // Evaluation
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
+    // Fuzzy evaluation cycle
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void EvaluateDifficulty()
     {
-        // Not enough shots in this window to make a fair judgment
-        if (_shotsFiredinWindow < minShotsBeforeEval)
+        if (_shotsInWindow < minShotsBeforeEval)
         {
-            Debug.Log($"[DifficultyManager] Skipping eval — only " +
-                      $"{_shotsFiredinWindow}/{minShotsBeforeEval} shots in window.");
+            Debug.Log($"[DifficultyManager] Skipping — only {_shotsInWindow}/" +
+                      $"{minShotsBeforeEval} shots in window.");
             ResetWindow();
             return;
         }
 
-        float accuracy = WindowAccuracy;
-        DifficultyTier newTier;
+        float accuracy    = WindowAccuracy;
+        float healthRatio = HealthRatio;
 
-        if (accuracy < easyThreshold)
-            newTier = DifficultyTier.Easy;
-        else if (accuracy > hardThreshold)
-            newTier = DifficultyTier.Hard;
-        else
-            newTier = DifficultyTier.Normal;
-
-        Debug.Log($"[DifficultyManager] Eval: accuracy={accuracy * 100f:F0}% → tier={newTier}");
+        // ── Fuzzy inference ─────────────────────────────────────────────────
+        float newScore = FuzzyDDA.Evaluate(accuracy, healthRatio, out FuzzyDebugSnapshot snap);
 
         ResetWindow();
 
+        // ── Update state ────────────────────────────────────────────────────
+        CurrentFuzzyScore = newScore;
+        LastSnapshot      = snap;
+
+        Debug.Log($"[DifficultyManager] FL-DDA eval | acc={accuracy * 100f:F0}% " +
+                  $"hp={healthRatio * 100f:F0}% | {snap}");
+
+        // ── Apply to enemies ────────────────────────────────────────────────
+        ApplyFuzzyScoreToAllEnemies(newScore);
+
+        // ── Derive display tier ─────────────────────────────────────────────
+        DifficultyTier newTier = ScoreToTier(newScore);
         if (newTier != CurrentTier)
-            SetTier(newTier);
+        {
+            DifficultyTier prev = CurrentTier;
+            CurrentTier = newTier;
+            OnTierChanged?.Invoke(newTier);
+
+            TestMetricsCollector.Instance?.RecordDDAChange(
+                prev.ToString(), newTier.ToString(), accuracy);
+
+            Debug.Log($"[DifficultyManager] Display tier: {prev} → {newTier} " +
+                      $"(score={newScore:F3})");
+        }
+
+        // Always fire the continuous score event for research HUD/export
+        OnFuzzyScoreUpdated?.Invoke(newScore, snap);
     }
 
-    private void SetTier(DifficultyTier newTier)
+    // ─────────────────────────────────────────────────────────────────────────
+    // Tier derivation from score
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private DifficultyTier ScoreToTier(float score)
     {
-        DifficultyTier previous = CurrentTier;
-        CurrentTier = newTier;
-
-        ApplyTierToAllEnemies(newTier);
-        OnTierChanged?.Invoke(newTier);
-
-        // Report to test metrics collector if present in scene
-        TestMetricsCollector.Instance?.RecordDDAChange(
-            previous.ToString(), newTier.ToString(), WindowAccuracy);
-
-        Debug.Log($"[DifficultyManager] Tier changed: {previous} → {newTier}");
+        if (score < easyBandMax) return DifficultyTier.Easy;
+        if (score > hardBandMin) return DifficultyTier.Hard;
+        return DifficultyTier.Normal;
     }
 
-    // ---------------------------------------------------------------
-    // Apply stats to enemies
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
+    // Apply settings to all living enemies
+    // ─────────────────────────────────────────────────────────────────────────
 
-    private void ApplyTierToAllEnemies(DifficultyTier tier)
+    private void ApplyFuzzyScoreToAllEnemies(float score)
     {
         if (EnemyManager.Instance == null) return;
 
+        EnemyDifficultySettings settings = BuildSettingsFromScore(score);
         var enemies = EnemyManager.Instance.GetLiveEnemies();
 
         foreach (IEnemy iEnemy in enemies)
         {
             if (iEnemy == null || !iEnemy.IsAlive) continue;
-            EnemyAI enemy = iEnemy as EnemyAI;
-            if (enemy == null) continue;
-            enemy.ApplyDifficultySettings(BuildSettings(tier));
+            if (iEnemy is not EnemyAI ai) continue;
+            ai.ApplyDifficultySettings(settings);
         }
 
-        Debug.Log($"[DifficultyManager] Applied {tier} settings to " +
-                  $"{enemies.Count} living enemies.");
+        Debug.Log($"[DifficultyManager] Applied score={score:F3} settings " +
+                  $"to {enemies.Count} living enemies.");
     }
 
-    // ---------------------------------------------------------------
-    // Settings builder
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
+    // Settings builder — continuous interpolation
+    // ─────────────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Build an <see cref="EnemyDifficultySettings"/> by linearly interpolating
+    /// between the Easy→Normal→Hard anchor multipliers using the fuzzy score.
+    ///
+    /// score ∈ [0.0, 0.5] : lerp from Easy anchor to Normal anchor
+    /// score ∈ [0.5, 1.0] : lerp from Normal anchor to Hard anchor
+    ///
+    /// This produces smooth, continuous enemy scaling with no stat jumps.
+    /// </summary>
+    public EnemyDifficultySettings BuildSettingsFromScore(float score)
+    {
+        score = Mathf.Clamp01(score);
+
+        EnemyDifficultySettings easy   = AnchorEasy();
+        EnemyDifficultySettings normal = AnchorNormal();
+        EnemyDifficultySettings hard   = AnchorHard();
+
+        if (score <= 0.5f)
+        {
+            float t = score / 0.5f;   // 0 at Easy anchor, 1 at Normal anchor
+            return Lerp(easy, normal, t);
+        }
+        else
+        {
+            float t = (score - 0.5f) / 0.5f;   // 0 at Normal anchor, 1 at Hard anchor
+            return Lerp(normal, hard, t);
+        }
+    }
+
+    /// <summary>
+    /// Backward-compatible method called by EnemyAI.Start() when it initialises
+    /// before the first fuzzy evaluation has run.  Maps tier to a score then
+    /// delegates to <see cref="BuildSettingsFromScore"/>.
+    /// </summary>
     public EnemyDifficultySettings BuildSettings(DifficultyTier tier)
     {
-        switch (tier)
+        float score = tier switch
         {
-            case DifficultyTier.Easy:
-                return new EnemyDifficultySettings
-                {
-                    healthMult       = easyHealthMult,
-                    patrolSpeedMult  = easyPatrolSpeedMult,
-                    chaseSpeedMult   = easyChaseSpeedMult,
-                    damageMult       = easyDamageMult,
-                    detectionMult    = easyDetectionMult,
-                    attackRangeMult  = easyAttackRangeMult,
-                    cooldownMult     = easyCooldownMult
-                };
-
-            case DifficultyTier.Hard:
-                return new EnemyDifficultySettings
-                {
-                    healthMult       = hardHealthMult,
-                    patrolSpeedMult  = hardPatrolSpeedMult,
-                    chaseSpeedMult   = hardChaseSpeedMult,
-                    damageMult       = hardDamageMult,
-                    detectionMult    = hardDetectionMult,
-                    attackRangeMult  = hardAttackRangeMult,
-                    cooldownMult     = hardCooldownMult
-                };
-
-            default: // Normal
-                return new EnemyDifficultySettings
-                {
-                    healthMult       = normalHealthMult,
-                    patrolSpeedMult  = normalPatrolSpeedMult,
-                    chaseSpeedMult   = normalChaseSpeedMult,
-                    damageMult       = normalDamageMult,
-                    detectionMult    = normalDetectionMult,
-                    attackRangeMult  = normalAttackRangeMult,
-                    cooldownMult     = normalCooldownMult
-                };
-        }
+            DifficultyTier.Easy => 0.0f,
+            DifficultyTier.Hard => 1.0f,
+            _                   => 0.5f
+        };
+        return BuildSettingsFromScore(score);
     }
 
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
+    // Anchor constructors
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private EnemyDifficultySettings AnchorEasy() => new()
+    {
+        healthMult      = easyHealthMult,
+        patrolSpeedMult = easyPatrolSpeedMult,
+        chaseSpeedMult  = easyChaseSpeedMult,
+        damageMult      = easyDamageMult,
+        detectionMult   = easyDetectionMult,
+        attackRangeMult = easyAttackRangeMult,
+        cooldownMult    = easyCooldownMult
+    };
+
+    private EnemyDifficultySettings AnchorNormal() => new()
+    {
+        healthMult      = normalHealthMult,
+        patrolSpeedMult = normalPatrolSpeedMult,
+        chaseSpeedMult  = normalChaseSpeedMult,
+        damageMult      = normalDamageMult,
+        detectionMult   = normalDetectionMult,
+        attackRangeMult = normalAttackRangeMult,
+        cooldownMult    = normalCooldownMult
+    };
+
+    private EnemyDifficultySettings AnchorHard() => new()
+    {
+        healthMult      = hardHealthMult,
+        patrolSpeedMult = hardPatrolSpeedMult,
+        chaseSpeedMult  = hardChaseSpeedMult,
+        damageMult      = hardDamageMult,
+        detectionMult   = hardDetectionMult,
+        attackRangeMult = hardAttackRangeMult,
+        cooldownMult    = hardCooldownMult
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Linear interpolation between two EnemyDifficultySettings
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private static EnemyDifficultySettings Lerp(EnemyDifficultySettings a,
+                                                EnemyDifficultySettings b,
+                                                float t)
+    {
+        return new EnemyDifficultySettings
+        {
+            healthMult      = Mathf.Lerp(a.healthMult,      b.healthMult,      t),
+            patrolSpeedMult = Mathf.Lerp(a.patrolSpeedMult, b.patrolSpeedMult, t),
+            chaseSpeedMult  = Mathf.Lerp(a.chaseSpeedMult,  b.chaseSpeedMult,  t),
+            damageMult      = Mathf.Lerp(a.damageMult,      b.damageMult,      t),
+            detectionMult   = Mathf.Lerp(a.detectionMult,   b.detectionMult,   t),
+            attackRangeMult = Mathf.Lerp(a.attackRangeMult, b.attackRangeMult, t),
+            cooldownMult    = Mathf.Lerp(a.cooldownMult,    b.cooldownMult,    t)
+        };
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Utility
-    // ---------------------------------------------------------------
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void ResetWindow()
     {
-        _shotsFiredinWindow = 0;
-        _shotsHitInWindow   = 0;
+        _shotsInWindow = 0;
+        _hitsInWindow  = 0;
     }
 
-    /// <summary>Returns a readable summary for a debug HUD.</summary>
+    /// <summary>One-line summary for debug HUD.</summary>
     public string GetDebugSummary()
     {
-        return $"Tier: {CurrentTier} | " +
-               $"Window: {WindowAccuracy * 100f:F0}% ({_shotsHitInWindow}/{_shotsFiredinWindow}) | " +
-               $"Lifetime: {LifetimeAccuracy * 100f:F0}%";
+        return $"FL-DDA | Score: {CurrentFuzzyScore:F3} | Tier: {CurrentTier} | " +
+               $"Window: {WindowAccuracy * 100f:F0}% ({_hitsInWindow}/{_shotsInWindow}) | " +
+               $"HP ratio: {HealthRatio * 100f:F0}% | " +
+               $"Lifetime acc: {LifetimeAccuracy * 100f:F0}%";
+    }
+
+    /// <summary>Multi-line fuzzy membership breakdown for debug overlay.</summary>
+    public string GetFuzzyBreakdown()
+    {
+        FuzzyDebugSnapshot s = LastSnapshot;
+        return
+            $"── Accuracy memberships ──\n" +
+            $"  Low:    {s.accLow  :F3}\n" +
+            $"  Medium: {s.accMed  :F3}\n" +
+            $"  High:   {s.accHigh :F3}\n" +
+            $"── HP memberships ─────────\n" +
+            $"  Low:    {s.hpLow   :F3}\n" +
+            $"  Medium: {s.hpMed   :F3}\n" +
+            $"  High:   {s.hpHigh  :F3}\n" +
+            $"── Output weights ─────────\n" +
+            $"  VeryEasy: {s.wVeryEasy:F3}\n" +
+            $"  Easy:     {s.wEasy    :F3}\n" +
+            $"  Normal:   {s.wNormal  :F3}\n" +
+            $"  Hard:     {s.wHard    :F3}\n" +
+            $"  VeryHard: {s.wVeryHard:F3}\n" +
+            $"── Result ─────────────────\n" +
+            $"  Score: {s.crisp:F4}";
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Test hooks
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public int ShotsInWindow => _shotsInWindow;
+    public int HitsInWindow  => _hitsInWindow;
+
+    /// <summary>
+    /// Pure static classifier — maps raw accuracy to a display tier.
+    /// Thresholds match Chapter 3 design: below 30% = Easy, above 65% = Hard.
+    /// Used by unit tests only; the live system uses FuzzyDDA.Evaluate().
+    /// </summary>
+    public static DifficultyTier ClassifyAccuracy(float accuracy)
+    {
+        if (accuracy < 0.30f) return DifficultyTier.Easy;
+        if (accuracy > 0.65f) return DifficultyTier.Hard;
+        return DifficultyTier.Normal;
+    }
+
+    /// <summary>
+    /// Forces a fuzzy score and immediately applies it to all living enemies.
+    /// Use only in PlayMode integration tests — never called during gameplay.
+    /// </summary>
+    public void ForceApplyFuzzyScore(float score)
+    {
+        CurrentFuzzyScore = Mathf.Clamp01(score);
+        DifficultyTier newTier = ScoreToTier(CurrentFuzzyScore);
+        if (newTier != CurrentTier)
+        {
+            CurrentTier = newTier;
+            OnTierChanged?.Invoke(CurrentTier);
+        }
+        ApplyFuzzyScoreToAllEnemies(CurrentFuzzyScore);
     }
 
     private void OnDestroy()
@@ -353,26 +536,20 @@ public class DifficultyManager : MonoBehaviour
     }
 }
 
-// ---------------------------------------------------------------
-// Data container — passed from DifficultyManager to EnemyAI
-// ---------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────────────────────
+// Data container — passed from DifficultyManager to EnemyAI (unchanged API)
+// ─────────────────────────────────────────────────────────────────────────────
 
 /// <summary>
-/// Plain data struct carrying all stat values for one difficulty tier.
-/// DifficultyManager builds it, EnemyAI.ApplyDifficultySettings() reads it.
-/// </summary>
-/// <summary>
 /// Multiplier-based difficulty settings.
-/// Each value is multiplied against the enemy's own base stats
-/// so every enemy type scales proportionally — roster balance
-/// is preserved at all difficulty tiers.
+/// Built by DifficultyManager.BuildSettingsFromScore() via linear interpolation.
+/// Read by EnemyAI.ApplyDifficultySettings().
 ///
-/// Normal tier = all 1.0 (no change from base).
-/// Easy tier   = values below 1.0 (weaker enemies).
-/// Hard tier   = values above 1.0 (stronger enemies).
-/// cooldownMult is inverted — higher value = slower attacks.
+/// All multipliers are applied against each enemy's stored base stats, so
+/// roster balance is preserved at every point on the continuous difficulty curve.
+/// cooldownMult is inverted — higher value = slower attack rate.
 /// </summary>
-[System.Serializable]
+[Serializable]
 public struct EnemyDifficultySettings
 {
     public float healthMult;

@@ -10,8 +10,6 @@ using UnityEngine.AI;
 ///   Patrol  → walks between waypoints
 ///   Chase   → moves toward the player when detected
 ///   Attack  → deals damage when within attack range
-///   Return  → walks back to patrol route when player escapes
-///   Dead    → plays death, drops pickup, removes itself
 ///
 /// Setup:
 ///   1. Attach to an enemy GameObject that has a NavMeshAgent component.
@@ -34,9 +32,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
     {
         Patrol,
         Chase,
-        Attack,
-        Return,
-        Dead
+        Attack
     }
 
     // ---------------------------------------------------------------
@@ -82,6 +78,11 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
 
     public EnemyState CurrentState { get; private set; } = EnemyState.Patrol;
     public bool IsAlive            { get; private set; } = true;
+
+    // --- Test hooks ---
+    public bool  IsDistracted   => _decoyTimer > 0f;
+    public float BaseChaseSpeed => _baseChaseSpeed;
+    public float ChaseSpeed     => chaseSpeed;
 
     // ---------------------------------------------------------------
     // Private — runtime stats (set by ApplyStats / DDA)
@@ -205,7 +206,6 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
             case EnemyState.Patrol:  UpdatePatrol();  break;
             case EnemyState.Chase:   UpdateChase();   break;
             case EnemyState.Attack:  UpdateAttack();  break;
-            case EnemyState.Return:  UpdateReturn();  break;
         }
     }
 
@@ -289,7 +289,8 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
     {
         if (_player == null || !_player.IsAlive)
         {
-            SetState(EnemyState.Return);
+            SetState(EnemyState.Patrol);
+            PickRandomPatrolPoint();
             return;
         }
 
@@ -297,7 +298,8 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
 
         if (!_isDistracted && dist > losePlayerRange)
         {
-            SetState(EnemyState.Return);
+            SetState(EnemyState.Patrol);
+            PickRandomPatrolPoint();
             return;
         }
 
@@ -369,7 +371,8 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
     {
         if (_player == null || !_player.IsAlive)
         {
-            SetState(EnemyState.Return);
+            SetState(EnemyState.Patrol);
+            PickRandomPatrolPoint();
             return;
         }
 
@@ -477,27 +480,6 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
     }
 
     // ---------------------------------------------------------------
-    // FSM — Return
-    // ---------------------------------------------------------------
-
-    private void UpdateReturn()
-    {
-        if (CanSeePlayer())
-        {
-            SetState(EnemyState.Chase);
-            return;
-        }
-
-        _anim?.SetSpeed(_agent.velocity.magnitude);
-
-        if (!_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
-        {
-            SetState(EnemyState.Patrol);
-            PickRandomPatrolPoint();
-        }
-    }
-
-    // ---------------------------------------------------------------
     // State transition
     // ---------------------------------------------------------------
 
@@ -517,10 +499,6 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
                 break;
             case EnemyState.Attack:
                 _agent.ResetPath();
-                break;
-            case EnemyState.Return:
-                _agent.speed = patrolSpeed;
-                _agent.SetDestination(_spawnPoint);
                 break;
         }
 
@@ -597,8 +575,11 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
         StartCoroutine(FlashHit());
 
         // Chase player when damaged regardless of current state
-        if (CurrentState != EnemyState.Dead && CurrentState != EnemyState.Chase && CurrentState != EnemyState.Attack)
+        if (CurrentState != EnemyState.Chase && CurrentState != EnemyState.Attack)
+        {
             SetState(EnemyState.Chase);
+            _agent.SetDestination(_player.transform.position);
+        }
 
         if (_currentHealth <= 0)
             Die();
@@ -663,7 +644,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
     /// </summary>
     public void DistractTo(Vector3 position)
     {
-        if (!IsAlive || CurrentState == EnemyState.Dead) return;
+        if (!IsAlive) return;
 
         TestMetricsCollector.Instance?.RecordFSMTransition(
             gameObject.name, CurrentState.ToString(), "Chase(Decoy)");
@@ -679,12 +660,23 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
         Debug.Log($"[EnemyAI] {gameObject.name} distracted to {position}");
     }
 
+    private void OnDestroy()
+    {
+        // Guard: only deregister if not already dead (Die() already called DeregisterEnemy).
+        // Also mark IsAlive = false so ApplyFuzzyScoreToAllEnemies skips us even if
+        // the interface-typed reference doesn't use Unity's null override.
+        if (IsAlive)
+        {
+            IsAlive = false;
+            EnemyManager.Instance?.DeregisterEnemy(this);
+        }
+    }
+
     private void Die()
     {
         if (!IsAlive) return;
 
         IsAlive = false;
-        SetState(EnemyState.Dead);
         _agent.enabled = false;
 
         _anim?.TriggerDie();

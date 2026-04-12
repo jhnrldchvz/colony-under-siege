@@ -132,9 +132,13 @@ public class PlayerController : MonoBehaviour, IDamageable
         }
     }
 
+    /// <summary>Set to false to freeze camera look (e.g. while a UI panel is open).</summary>
+    public bool LookEnabled = true;
+
     private void HandleLook()
     {
         if (cameraHolder == null) return;
+        if (!LookEnabled) return;
 
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;

@@ -175,6 +175,7 @@ GameObject:
   - component: {fileID: 4198830266632758361}
   - component: {fileID: 1105046354201738184}
   - component: {fileID: 5158381589661158856}
+  - component: {fileID: 967040416335705145}
   m_Layer: 3
   m_Name: Player
   m_TagString: Player
@@ -235,9 +236,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 817e36e52bd88458c82ba02ed9dd6838, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  walkSpeed: 4
-  runSpeed: 8
-  jumpForce: 8
+  walkSpeed: 5.5
+  runSpeed: 9
+  jumpForce: 7
   gravityMultiplier: 2.5
   cameraHolder: {fileID: 1779631194841240448}
   mouseSensitivity: 2
@@ -272,10 +273,10 @@ MonoBehaviour:
     mode: 0
     startingAmmo: 90
     fireRate: 0.15
-    reloadTime: 1.8
-    damage: 10
-    range: 50
-    muzzleFlashFX: {fileID: 100006, guid: 30b4cc2728d8cec499fad63ba93785a4, type: 3}
+    reloadTime: 4
+    damage: 20
+    range: 500
+    muzzleFlashFX: {fileID: 100006, guid: 1b493bdcd3b416ad7b84b0ea9ff4fa6c, type: 3}
     muzzleFlashOffset: {x: 0, y: 0, z: 0.05}
     muzzleColor: {r: 1, g: 0.85, b: 0.4, a: 1}
     muzzleIntensity: 8
@@ -292,9 +293,9 @@ MonoBehaviour:
     mode: 0
     startingAmmo: 36
     fireRate: 0.4
-    reloadTime: 1.2
-    damage: 8
-    range: 30
+    reloadTime: 4
+    damage: 10
+    range: 500
     muzzleFlashFX: {fileID: 100000, guid: 43142f64f71eac0eb971faa675e18147, type: 3}
     muzzleFlashOffset: {x: 0.25, y: -0.25, z: 1}
     muzzleColor: {r: 1, g: 0.85, b: 0.4, a: 1}
@@ -312,7 +313,7 @@ MonoBehaviour:
     mode: 1
     startingAmmo: 3
     fireRate: 1
-    reloadTime: 5
+    reloadTime: 4
     damage: 8
     range: 30
     muzzleFlashFX: {fileID: 0}
@@ -323,7 +324,7 @@ MonoBehaviour:
     projectilePrefab: {fileID: 8228483890976800801, guid: 5b22287b9bfe984909bb1ee5afd1b2af, type: 3}
     throwForce: 15
     throwUpAngle: 20
-    unlockedFromBuildIndex: 0
+    unlockedFromBuildIndex: 3
   playerController: {fileID: 5559844464318006367}
   cameraHolder: {fileID: 0}
   hitEffectPrefab: {fileID: 100002, guid: f04e15e9b0b32f24b9e87868e8bfbeea, type: 3}
@@ -345,7 +346,7 @@ MonoBehaviour:
   helmetCrack1: {fileID: 0}
   helmetCrack2: {fileID: 0}
   crackFadeSpeed: 2
-  crackMaxAlpha: 0.85
+  crackMaxAlpha: 0.99
   crackPulse: 1
   hitShakeMagnitude: 9
   hitShakeDuration: 0.25
@@ -414,6 +415,30 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &967040416335705145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4588927758187782404}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6e0ae658b3f3a2f5a3654a84cfeb428, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GrabController
+  cameraHolder: {fileID: 1779631194841240448}
+  grabRange: 4
+  holdDistance: 2.5
+  grabLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  rotateSpeed: 180
+  scrollRollSpeed: 120
+  rotateModifier: 308
+  throwForce: 18
+  hoverOutlineColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  holdOutlineColor: {r: 0, g: 1, b: 1, a: 1}
 --- !u!1 &6383597949550102242
 GameObject:
   m_ObjectHideFlags: 0

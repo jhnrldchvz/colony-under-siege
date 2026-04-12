@@ -111,7 +111,7 @@ public class DecoyDevice : MonoBehaviour
     // ---------------------------------------------------------------
     // Noise pulse — forces nearby enemies to Chase toward this decoy
     // ---------------------------------------------------------------
-    private void EmitNoisePulse()
+    public void EmitNoisePulse()
     {
         if (pulseEffect != null)
         {

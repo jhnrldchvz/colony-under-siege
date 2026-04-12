@@ -124,7 +124,8 @@ public class BossController : MonoBehaviour, IDamageable, IEnemy
     // IDamageable / IEnemy
     // ---------------------------------------------------------------
 
-    public bool IsAlive => _currentHealth > 0 && _state != BossState.Dead;
+    public bool IsAlive      => _currentHealth > 0 && _state != BossState.Dead;
+    public bool Phase2Active => _phase2Active;
 
     // ---------------------------------------------------------------
     // Private
