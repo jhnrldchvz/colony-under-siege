@@ -13325,7 +13325,7 @@ MonoBehaviour:
   backFromSettingsButton: {fileID: 734189713}
   firstSceneIndex: 1
   tutorialSceneIndex: 6
-  animateTitle: 1
+  animateTitle: 0
 --- !u!1 &1490097109
 GameObject:
   m_ObjectHideFlags: 0

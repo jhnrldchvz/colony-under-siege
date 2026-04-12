@@ -199,7 +199,8 @@ public class DifficultyManager : MonoBehaviour
 
     private void Update()
     {
-        if (GameManager.Instance != null && !GameManager.Instance.IsPlaying()) return;
+        if (!IsGameScene) return;
+        if (!GameManager.Instance.IsPlaying()) return;
 
         _evalTimer += Time.deltaTime;
         if (_evalTimer >= evaluationInterval)
@@ -208,6 +209,10 @@ public class DifficultyManager : MonoBehaviour
             EvaluateDifficulty();
         }
     }
+
+    // True only when a game scene with a live GameManager is active.
+    // Automatically false in the main menu where GameManager does not exist.
+    private static bool IsGameScene => GameManager.Instance != null;
 
     private void OnSceneLoaded(UnityEngine.SceneManagement.Scene _,
                                UnityEngine.SceneManagement.LoadSceneMode __)
@@ -219,6 +224,8 @@ public class DifficultyManager : MonoBehaviour
     {
         yield return null;
         yield return null;
+
+        if (!IsGameScene) yield break;   // main menu — nothing to apply
 
         ResetWindow();
         _evalTimer = 0f;
@@ -232,7 +239,7 @@ public class DifficultyManager : MonoBehaviour
     private void CachePlayer()
     {
         _player = FindFirstObjectByType<PlayerController>();
-        if (_player == null)
+        if (_player == null && IsGameScene)
             Debug.LogWarning("[DifficultyManager] PlayerController not found — " +
                              "health ratio will default to 1.0 (full health).");
     }
@@ -270,8 +277,6 @@ public class DifficultyManager : MonoBehaviour
     {
         if (_shotsInWindow < minShotsBeforeEval)
         {
-            Debug.Log($"[DifficultyManager] Skipping — only {_shotsInWindow}/" +
-                      $"{minShotsBeforeEval} shots in window.");
             ResetWindow();
             return;
         }
