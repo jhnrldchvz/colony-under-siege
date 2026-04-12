@@ -241,6 +241,20 @@ public class UIManager : MonoBehaviour
     public TextMeshProUGUI timeBonusText;
 
     // ---------------------------------------------------------------
+    // Inspector — Panel polish
+    // ---------------------------------------------------------------
+
+    [Header("Panel Transitions")]
+    [Tooltip("Seconds for the storyboard / instruction panel to fade in on open")]
+    public float panelFadeInDuration  = 0.35f;
+
+    [Tooltip("Seconds for cross-fade between slides")]
+    public float slideFadeDuration    = 0.18f;
+
+    [Tooltip("Seconds per character for the typewriter body-text effect (0 = instant)")]
+    public float typewriterSpeed      = 0.02f;
+
+    // ---------------------------------------------------------------
     // Private state
     // ---------------------------------------------------------------
 
@@ -257,6 +271,13 @@ public class UIManager : MonoBehaviour
     private bool _powerCell1Collected;
     private bool _powerCell2Collected;
     private bool _deactivationDeviceCollected;
+
+    // Transition state
+    private CanvasGroup _sbCG;
+    private CanvasGroup _instrCG;
+    private bool        _slideTransitioning = false;
+    private bool        _sbTransitioning    = false;
+    private Coroutine   _typewriterCoroutine;
 
     // PlayerPrefs keys
     private const string KEY_SENSITIVITY    = "MouseSensitivity";
@@ -275,10 +296,45 @@ public class UIManager : MonoBehaviour
 
     private void Update()
     {
-        if (!_isReloading || reloadIndicator == null) return;
+        // ── Reload blink ────────────────────────────────────────────────────────
+        if (_isReloading && reloadIndicator != null)
+        {
+            _blinkTimer += Time.deltaTime * reloadBlinkSpeed;
+            reloadIndicator.SetActive(Mathf.Sin(_blinkTimer * Mathf.PI) > 0f);
+        }
 
-        _blinkTimer += Time.deltaTime * reloadBlinkSpeed;
-        reloadIndicator.SetActive(Mathf.Sin(_blinkTimer * Mathf.PI) > 0f);
+        // ── Storyboard keyboard nav ─────────────────────────────────────────────
+        if (storyboardPanel != null && storyboardPanel.activeSelf && !_sbTransitioning)
+        {
+            if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+                SbNext();
+            else if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+                SbPrev();
+            else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
+            {
+                StoryboardSlide[] slides = _sbIsWinOutro ? winStoryboardSlides : storyboardSlides;
+                if (slides != null && _sbIndex == slides.Length - 1)
+                    SbContinue();
+                else
+                    SbNext();
+            }
+        }
+
+        // ── Instructions keyboard nav ───────────────────────────────────────────
+        if (instructionPanel != null && instructionPanel.activeSelf && !_slideTransitioning)
+        {
+            if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
+                SlideNext();
+            else if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
+                SlidePrev();
+            else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
+            {
+                if (instructionSlides != null && _slideIndex == instructionSlides.Length - 1)
+                    SlideStart();
+                else
+                    SlideNext();
+            }
+        }
     }
 
     private void Start()
@@ -313,6 +369,13 @@ public class UIManager : MonoBehaviour
             _player.OnHealthChanged += UpdateHealth;
             _player.OnMaxHealthSet  += SetMaxHealth;
         }
+
+        // Cache CanvasGroups for panel fade transitions.
+        // For the storyboard, target the "SbContentLayer" child if it exists so that
+        // only the slide content fades during transitions — the panel root's opaque
+        // black backdrop stays visible and the game world never shows through.
+        _sbCG    = GetOrAddCG(FindContentLayer(storyboardPanel, "SbContentLayer"));
+        _instrCG = GetOrAddCG(instructionPanel);
 
         // Init settings sliders (loads PlayerPrefs and wires listeners)
         InitSettings();
@@ -584,28 +647,29 @@ public class UIManager : MonoBehaviour
 
     private void ShowInstructions()
     {
-        // Enter Instructions state — freezes time, unlocks cursor, blocks all gameplay input.
-        // ESC has no effect in this state (GameManager.Update ignores it).
         GameManager.Instance?.StartInstructions();
 
-        // Hide all panels — show only instruction panel
-        if (hudPanel          != null) hudPanel.SetActive(false);
-        if (pausePanel        != null) pausePanel.SetActive(false);
-        if (gameOverPanel     != null) gameOverPanel.SetActive(false);
-        if (winPanel          != null) winPanel.SetActive(false);
-        if (instructionPanel  != null) instructionPanel.SetActive(true);
+        if (hudPanel         != null) hudPanel.SetActive(false);
+        if (pausePanel       != null) pausePanel.SetActive(false);
+        if (gameOverPanel    != null) gameOverPanel.SetActive(false);
+        if (winPanel         != null) winPanel.SetActive(false);
+        if (instructionPanel != null) instructionPanel.SetActive(true);
 
         // Wire buttons
-        slideNextButton?  .onClick.RemoveAllListeners();
-        slidePrevButton?  .onClick.RemoveAllListeners();
-        slideStartButton? .onClick.RemoveAllListeners();
+        slideNextButton? .onClick.RemoveAllListeners();
+        slidePrevButton? .onClick.RemoveAllListeners();
+        slideStartButton?.onClick.RemoveAllListeners();
 
-        slideNextButton?  .onClick.AddListener(SlideNext);
-        slidePrevButton?  .onClick.AddListener(SlidePrev);
-        slideStartButton? .onClick.AddListener(SlideStart);
+        slideNextButton? .onClick.AddListener(SlideNext);
+        slidePrevButton? .onClick.AddListener(SlidePrev);
+        slideStartButton?.onClick.AddListener(SlideStart);
 
         _slideIndex = 0;
         RefreshSlide();
+
+        // Fade panel in from transparent
+        if (_instrCG != null)
+            StartCoroutine(FadeCanvasGroup(_instrCG, 0f, 1f, panelFadeInDuration));
     }
 
     private void RefreshSlide()
@@ -615,40 +679,51 @@ public class UIManager : MonoBehaviour
         _slideIndex = Mathf.Clamp(_slideIndex, 0, instructionSlides.Length - 1);
         InstructionSlide slide = instructionSlides[_slideIndex];
 
-        if (slideImage      != null) slideImage.sprite  = slide.image;
-        if (slideBodyText   != null) slideBodyText.text  = slide.bodyText;
+        // Image — hide container when no sprite assigned
+        if (slideImage != null)
+        {
+            bool hasImg = slide.image != null;
+            slideImage.sprite = slide.image;
+            slideImage.gameObject.SetActive(hasImg);
+        }
+
         if (slideCounterText != null)
             slideCounterText.text = $"{_slideIndex + 1} / {instructionSlides.Length}";
 
-        // Navigation button visibility
+        // Typewriter or instant body text
+        if (slideBodyText != null)
+        {
+            if (_typewriterCoroutine != null) StopCoroutine(_typewriterCoroutine);
+            _typewriterCoroutine = typewriterSpeed > 0f
+                ? StartCoroutine(TypewriterText(slideBodyText, slide.bodyText))
+                : null;
+            if (typewriterSpeed <= 0f) slideBodyText.text = slide.bodyText;
+        }
+
         bool isFirst = _slideIndex == 0;
         bool isLast  = _slideIndex == instructionSlides.Length - 1;
 
-        // Prev only shows when not on first slide
         if (slidePrevButton  != null) slidePrevButton.gameObject.SetActive(!isFirst);
-
-        // Next hides on last slide, Start shows on last slide
         if (slideNextButton  != null) slideNextButton.gameObject.SetActive(!isLast);
         if (slideStartButton != null) slideStartButton.gameObject.SetActive(isLast);
     }
 
     private void SlideNext()
     {
-        _slideIndex++;
-        RefreshSlide();
+        if (_slideTransitioning || instructionSlides == null) return;
+        if (_slideIndex >= instructionSlides.Length - 1) return;
+        StartCoroutine(SlideTransition(+1, isStoryboard: false));
     }
 
     private void SlidePrev()
     {
-        _slideIndex--;
-        RefreshSlide();
+        if (_slideTransitioning || _slideIndex <= 0) return;
+        StartCoroutine(SlideTransition(-1, isStoryboard: false));
     }
 
     private void SlideStart()
     {
         if (instructionPanel != null) instructionPanel.SetActive(false);
-
-        // Transition from Instructions → Playing: restores timeScale, locks cursor, fires OnStateChanged
         GameManager.Instance?.EndInstructions();
         ShowHUDOnly();
     }
@@ -778,6 +853,10 @@ public class UIManager : MonoBehaviour
         sbContinueButton? .onClick.AddListener(SbContinue);
 
         RefreshStoryboardSlide();
+
+        // Fade panel in from transparent
+        if (_sbCG != null)
+            StartCoroutine(FadeCanvasGroup(_sbCG, 0f, 1f, panelFadeInDuration));
     }
 
     private void RefreshStoryboardSlide()
@@ -788,21 +867,49 @@ public class UIManager : MonoBehaviour
         _sbIndex = Mathf.Clamp(_sbIndex, 0, slides.Length - 1);
         StoryboardSlide slide = slides[_sbIndex];
 
-        if (sbImage     != null) { sbImage.sprite  = slide.image; sbImage.enabled = slide.image != null; }
-        if (sbTitleText != null)   sbTitleText.text = slide.titleText;
-        if (sbBodyText  != null)   sbBodyText.text  = slide.bodyText;
+        // SbImage is the full-screen background — always keep it active.
+        // When no sprite is assigned it shows its placeholder tint so the
+        // panel still visually fills the whole screen.
+        if (sbImage != null)
+        {
+            sbImage.sprite = slide.image;
+            sbImage.gameObject.SetActive(true);
+        }
+
+        if (sbTitleText   != null) sbTitleText.text   = slide.titleText;
         if (sbCounterText != null) sbCounterText.text = $"{_sbIndex + 1} / {slides.Length}";
+
+        // Typewriter body text
+        if (sbBodyText != null)
+        {
+            if (_typewriterCoroutine != null) StopCoroutine(_typewriterCoroutine);
+            _typewriterCoroutine = typewriterSpeed > 0f
+                ? StartCoroutine(TypewriterText(sbBodyText, slide.bodyText))
+                : null;
+            if (typewriterSpeed <= 0f) sbBodyText.text = slide.bodyText;
+        }
 
         bool isFirst = _sbIndex == 0;
         bool isLast  = _sbIndex == slides.Length - 1;
 
-        if (sbPrevButton    != null) sbPrevButton.gameObject.SetActive(!isFirst);
-        if (sbNextButton    != null) sbNextButton.gameObject.SetActive(!isLast);
+        if (sbPrevButton     != null) sbPrevButton.gameObject.SetActive(!isFirst);
+        if (sbNextButton     != null) sbNextButton.gameObject.SetActive(!isLast);
         if (sbContinueButton != null) sbContinueButton.gameObject.SetActive(isLast);
     }
 
-    private void SbNext()    { _sbIndex++; RefreshStoryboardSlide(); }
-    private void SbPrev()    { _sbIndex--; RefreshStoryboardSlide(); }
+    private void SbNext()
+    {
+        if (_sbTransitioning) return;
+        StoryboardSlide[] slides = _sbIsWinOutro ? winStoryboardSlides : storyboardSlides;
+        if (slides == null || _sbIndex >= slides.Length - 1) return;
+        StartCoroutine(SlideTransition(+1, isStoryboard: true));
+    }
+
+    private void SbPrev()
+    {
+        if (_sbTransitioning || _sbIndex <= 0) return;
+        StartCoroutine(SlideTransition(-1, isStoryboard: true));
+    }
 
     private void SbContinue()
     {
@@ -827,6 +934,102 @@ public class UIManager : MonoBehaviour
                 ShowInstructions();
             // else HandleStateChanged already called ShowHUDOnly() via the state transition
         }
+    }
+
+    // ---------------------------------------------------------------
+    // Panel / slide transition coroutines
+    // ---------------------------------------------------------------
+
+    /// <summary>Fades a CanvasGroup from <c>from</c> to <c>to</c> over <c>duration</c> seconds (unscaled time).</summary>
+    private IEnumerator FadeCanvasGroup(CanvasGroup cg, float from, float to, float duration)
+    {
+        cg.alpha = from;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            cg.alpha = Mathf.Lerp(from, to, elapsed / duration);
+            yield return null;
+        }
+        cg.alpha = to;
+    }
+
+    /// <summary>
+    /// Cross-fades the active slide panel out, advances the index by <c>dir</c>,
+    /// then fades the new slide in. Works for both storyboard and instruction panels.
+    /// </summary>
+    private IEnumerator SlideTransition(int dir, bool isStoryboard)
+    {
+        CanvasGroup cg = isStoryboard ? _sbCG : _instrCG;
+
+        if (isStoryboard) _sbTransitioning    = true;
+        else              _slideTransitioning = true;
+
+        // Fade out
+        if (cg != null)
+        {
+            float elapsed = 0f;
+            float start   = cg.alpha;
+            while (elapsed < slideFadeDuration)
+            {
+                elapsed  += Time.unscaledDeltaTime;
+                cg.alpha  = Mathf.Lerp(start, 0f, elapsed / slideFadeDuration);
+                yield return null;
+            }
+            cg.alpha = 0f;
+        }
+
+        // Advance index and refresh content
+        if (isStoryboard) { _sbIndex    += dir; RefreshStoryboardSlide(); }
+        else              { _slideIndex += dir; RefreshSlide(); }
+
+        // Fade in
+        if (cg != null)
+        {
+            float elapsed = 0f;
+            while (elapsed < slideFadeDuration)
+            {
+                elapsed  += Time.unscaledDeltaTime;
+                cg.alpha  = Mathf.Lerp(0f, 1f, elapsed / slideFadeDuration);
+                yield return null;
+            }
+            cg.alpha = 1f;
+        }
+
+        if (isStoryboard) _sbTransitioning    = false;
+        else              _slideTransitioning = false;
+    }
+
+    /// <summary>Reveals <c>text</c> one character at a time (unscaled time).</summary>
+    private IEnumerator TypewriterText(TMPro.TextMeshProUGUI label, string fullText)
+    {
+        label.text = "";
+        foreach (char c in fullText)
+        {
+            label.text += c;
+            yield return new WaitForSecondsRealtime(typewriterSpeed);
+        }
+    }
+
+    /// <summary>Gets an existing CanvasGroup or adds one to the panel's root.</summary>
+    private static CanvasGroup GetOrAddCG(GameObject panel)
+    {
+        if (panel == null) return null;
+        CanvasGroup cg = panel.GetComponent<CanvasGroup>();
+        if (cg == null) cg = panel.AddComponent<CanvasGroup>();
+        return cg;
+    }
+
+    /// <summary>
+    /// Returns the named child of <paramref name="panel"/> if found, otherwise
+    /// returns <paramref name="panel"/> itself. Used to isolate the fade layer so
+    /// the panel root's backdrop stays opaque during slide cross-fades.
+    /// </summary>
+    private static GameObject FindContentLayer(GameObject panel, string childName)
+    {
+        if (panel == null) return null;
+        Transform child = panel.transform.Find(childName);
+        return child != null ? child.gameObject : panel;
     }
 
     // ---------------------------------------------------------------
