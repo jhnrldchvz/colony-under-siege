@@ -144,7 +144,7 @@ public static class LoadingScreenBuilder
         t.fontStyle      = style;
         t.alignment      = align;
         t.color          = Color.white;
-        t.enableWordWrapping = true;
+        t.textWrappingMode = TextWrappingModes.Normal;
         return t;
     }
 

@@ -168,7 +168,7 @@ public static class NarrativePanelsBuilder
         var bodyTmp = MakeTMP("SbBodyText", textBlock.transform,
             "Your story begins here...",
             17, FontStyles.Italic, TextAlignmentOptions.Left, Color.white);
-        bodyTmp.enableWordWrapping = true;
+        bodyTmp.textWrappingMode = TextWrappingModes.Normal;
         LE(bodyTmp.gameObject, h: 80);
 
         // ── Nav buttons (bottom-right corner) ─────────────────────────────────
@@ -315,7 +315,7 @@ public static class NarrativePanelsBuilder
         var bodyTmp = MakeTMP("SlideBodyText", col.transform,
             "Mission objectives will appear here. Read carefully before engaging.",
             17, FontStyles.Normal, TextAlignmentOptions.Left, ColSubtext);
-        bodyTmp.enableWordWrapping = true;
+        bodyTmp.textWrappingMode = TextWrappingModes.Normal;
         LE(bodyTmp.gameObject, h: 90);
 
         Spacer(col.transform, 14);

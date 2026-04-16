@@ -191,7 +191,7 @@ public static class GamePanelsBuilder
         var msgTmp = MakeTMP("GameOverMessageText", col.transform,
             "The colony has fallen. Try again, soldier.",
             18, FontStyles.Italic, TextAlignmentOptions.Center, ColSubtext);
-        msgTmp.enableWordWrapping = true;
+        msgTmp.textWrappingMode = TextWrappingModes.Normal;
         LE(msgTmp.gameObject, h: 50);
 
         Spacer(col.transform, 30);

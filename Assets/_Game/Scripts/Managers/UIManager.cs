@@ -78,6 +78,13 @@ public class UIManager : MonoBehaviour
     [Tooltip("Small text panel in the corner listing active objectives")]
     public TextMeshProUGUI objectiveText;
 
+    [Header("HUD — Difficulty")]
+    [Tooltip("Optional difficulty panel root — toggled with the key below")]
+    public GameObject difficultyPanel;
+
+    [Tooltip("Key used to show/hide the difficulty panel")]
+    public KeyCode difficultyToggleKey = KeyCode.Tab;
+
     [Header("HUD — Crosshair")]
     [Tooltip("Crosshair image — hidden during cursor-visible states")]
     public GameObject crosshair;
@@ -301,6 +308,13 @@ public class UIManager : MonoBehaviour
         {
             _blinkTimer += Time.deltaTime * reloadBlinkSpeed;
             reloadIndicator.SetActive(Mathf.Sin(_blinkTimer * Mathf.PI) > 0f);
+        }
+
+        // ── Difficulty panel toggle ─────────────────────────────────────────────
+        if (difficultyPanel != null && Input.GetKeyDown(difficultyToggleKey))
+        {
+            if (GameManager.Instance == null || GameManager.Instance.IsPlaying())
+                ToggleDifficultyPanel();
         }
 
         // ── Storyboard keyboard nav ─────────────────────────────────────────────
@@ -745,6 +759,12 @@ public class UIManager : MonoBehaviour
         if (powerCell2Indicator          != null) powerCell2Indicator.SetActive(_powerCell2Collected);
         if (deactivationDeviceIndicator  != null) deactivationDeviceIndicator.SetActive(_deactivationDeviceCollected);
         // Healing warning managed by AICoreManager — don't reset here
+    }
+
+    public void ToggleDifficultyPanel()
+    {
+        if (difficultyPanel == null) return;
+        difficultyPanel.SetActive(!difficultyPanel.activeSelf);
     }
 
     /// <summary>Shows pause panel on top of the HUD.</summary>

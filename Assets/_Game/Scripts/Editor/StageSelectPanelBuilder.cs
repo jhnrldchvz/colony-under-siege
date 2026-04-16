@@ -141,7 +141,7 @@ public static class StageSelectPanelBuilder
 
         var descText = MakeTMP("StageDescriptionText", descRow.transform,
             DefaultDescs[0], 17, FontStyles.Normal, TextAlignmentOptions.Left, ColSubtext);
-        descText.enableWordWrapping = true;
+        descText.textWrappingMode = TextWrappingModes.Normal;
         LE(descText.gameObject, h: 72);
 
         // ── Action row ───────────────────────────────────────────────────────

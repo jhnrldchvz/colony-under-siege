@@ -327,7 +327,7 @@ public static class MainMenuSubPanelsBuilder
         {
             var entry = MakeTMP("AssetEntry", col.transform,
                 "· " + line, 12, FontStyles.Normal, TextAlignmentOptions.Left, ColSubtext);
-            entry.enableWordWrapping = true;
+            entry.textWrappingMode = TextWrappingModes.Normal;
             LE(entry.gameObject, h: 18);
             Spacer(col.transform, 2);
         }
