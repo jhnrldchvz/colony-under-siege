@@ -407,7 +407,11 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         _isPaused = false;
-        SceneManager.LoadScene(buildIndex);
+
+        if (LoadingManager.Instance != null)
+            LoadingManager.Instance.LoadScene(buildIndex);
+        else
+            SceneManager.LoadScene(buildIndex);
     }
 
     /// <summary>
@@ -417,7 +421,12 @@ public class GameManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         _isPaused = false;
-        SceneManager.LoadScene(sceneName);
+
+        int index = SceneUtility.GetBuildIndexByScenePath(sceneName);
+        if (LoadingManager.Instance != null && index >= 0)
+            LoadingManager.Instance.LoadScene(index);
+        else
+            SceneManager.LoadScene(sceneName);
     }
 
     // ---------------------------------------------------------------

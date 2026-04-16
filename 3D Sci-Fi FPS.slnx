@@ -3,6 +3,7 @@
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="QuickOutline.csproj" />
+  <Project Path="GameEditorAssembly.csproj" />
   <Project Path="WarFX.csproj" />
   <Project Path="PlayModeTests.csproj" />
   <Project Path="EditModeTests.csproj" />

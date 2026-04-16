@@ -270,7 +270,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
                     randPos, out hit, patrolRadius, UnityEngine.AI.NavMesh.AllAreas))
             {
                 _agent.speed = patrolSpeed;
-                _agent.SetDestination(hit.position);
+                NavMove(hit.position);
                 _hasDestination = true;
                 return;
             }
@@ -318,12 +318,12 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
             {
                 // Too far — close in to preferred range
                 _agent.speed = chaseSpeed;
-                _agent.SetDestination(_player.transform.position);
+                NavMove(_player.transform.position);
             }
             else
             {
                 // Within preferred range — hold position and face player
-                _agent.SetDestination(transform.position);
+                NavMove(transform.position);
                 FaceTarget(_player.transform.position);
                 // Still in range — enter attack
                 SetState(EnemyState.Attack);
@@ -344,7 +344,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
             {
                 // Chase decoy position
                 _decoyTimer -= Time.deltaTime;
-                _agent.SetDestination(_decoyPosition);
+                NavMove(_decoyPosition);
 
                 // Arrived at decoy — resume normal chase
                 float decoyDist = Vector3.Distance(transform.position, _decoyPosition);
@@ -356,7 +356,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
             }
             else
             {
-                _agent.SetDestination(_player.transform.position);
+                NavMove(_player.transform.position);
             }
         }
 
@@ -396,17 +396,17 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
                 // Player too close — back away
                 Vector3 retreatDir = (transform.position - _player.transform.position).normalized;
                 _agent.speed = chaseSpeed;
-                _agent.SetDestination(transform.position + retreatDir * 3f);
+                NavMove(transform.position + retreatDir * 3f);
             }
             else
             {
-                _agent.SetDestination(transform.position); // Hold
+                NavMove(transform.position); // Hold
             }
         }
         else
         {
             // Melee — stop and attack
-            _agent.SetDestination(transform.position);
+            NavMove(transform.position);
         }
 
         if (_attackTimer <= 0f)
@@ -578,7 +578,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
         if (CurrentState != EnemyState.Chase && CurrentState != EnemyState.Attack)
         {
             SetState(EnemyState.Chase);
-            _agent.SetDestination(_player.transform.position);
+            NavMove(_player.transform.position);
         }
 
         if (_currentHealth <= 0)
@@ -654,7 +654,7 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
         _decoyTimer    = 8f; // Follow decoy for up to 8s
 
         _agent.speed = chaseSpeed;
-        _agent.SetDestination(position);
+        NavMove(position);
         SetState(EnemyState.Chase);
 
         Debug.Log($"[EnemyAI] {gameObject.name} distracted to {position}");
@@ -793,6 +793,17 @@ public class EnemyAI : MonoBehaviour, IDamageable, IEnemy
     // ---------------------------------------------------------------
     // Utility — movement helpers
     // ---------------------------------------------------------------
+
+    /// <summary>
+    /// Safe wrapper for NavMeshAgent.SetDestination.
+    /// No-ops when the agent is not placed on a NavMesh (e.g. in test scenes),
+    /// preventing the "SetDestination can only be called on an active agent" error.
+    /// </summary>
+    private void NavMove(Vector3 destination)
+    {
+        if (_agent != null && _agent.isOnNavMesh)
+            _agent.SetDestination(destination);
+    }
 
     private void FaceTarget(Vector3 targetPosition)
     {

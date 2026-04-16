@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
@@ -205,7 +204,7 @@ public static class NarrativePanelsBuilder
 
         panel.SetActive(false);
         EditorUtility.SetDirty(ui);
-        EditorSceneManager.MarkSceneDirty(canvas.gameObject.scene);
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(canvas.gameObject.scene);
         Selection.activeGameObject = panel;
         Debug.Log("[Builder] Storyboard panel built and wired. SAVE THE SCENE before pressing Play.");
     }

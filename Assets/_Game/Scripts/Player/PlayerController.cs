@@ -29,8 +29,8 @@ public class PlayerController : MonoBehaviour, IDamageable
     [Header("NavMesh Boundary")]
     [Tooltip("Clamp player movement to NavMesh surface")]
     public bool  clampToNavMesh    = true;
-    [Tooltip("How far to sample NavMesh from player position")]
-    public float navMeshSampleRange = 2f;
+    [Tooltip("How far to sample NavMesh from player position — keep small (0.3–0.5) to prevent passing through walls")]
+    public float navMeshSampleRange = 0.35f;
 
     public int  CurrentHealth { get; private set; }
     public bool IsAlive       { get; private set; } = true;
@@ -115,14 +115,21 @@ public class PlayerController : MonoBehaviour, IDamageable
         if (clampToNavMesh && move.magnitude > 0f)
         {
             NavMeshHit hit;
-            if (NavMesh.SamplePosition(nextPos, out hit, navMeshSampleRange, NavMesh.AllAreas))
+            bool onNavMesh = NavMesh.SamplePosition(nextPos, out hit, navMeshSampleRange, NavMesh.AllAreas);
+            // Also confirm the sampled point is close to nextPos horizontally —
+            // a large lateral gap means the player would cross into a wall or off the walkable area.
+            bool laterallyValid = onNavMesh &&
+                Vector2.Distance(new Vector2(hit.position.x, hit.position.z),
+                                 new Vector2(nextPos.x, nextPos.z)) < navMeshSampleRange * 0.5f;
+
+            if (laterallyValid)
             {
                 // Next position is on NavMesh — allow movement
                 _cc.Move((move + Vector3.up * _velocity.y) * Time.deltaTime);
             }
             else
             {
-                // Next position is off NavMesh — block horizontal movement, keep gravity
+                // Next position is off NavMesh or blocked by an obstacle — keep gravity only
                 _cc.Move(Vector3.up * _velocity.y * Time.deltaTime);
             }
         }

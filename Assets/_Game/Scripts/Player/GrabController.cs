@@ -136,9 +136,9 @@ public class GrabController : MonoBehaviour
         _heldRb.useGravity  = false;
         _heldRb.isKinematic = true;
 
-        // Start with a clean upright rotation — fully independent of camera
-        _holdRotation = Quaternion.identity;
-        _heldRb.transform.rotation = _holdRotation;
+        // Preserve the object's current rotation — resetting to identity
+        // caused an instant visual snap/warp on every pickup.
+        _holdRotation = _heldRb.rotation;
 
         ClearHover();
         _heldObj.SetOutline(true, holdOutlineColor);
@@ -194,27 +194,26 @@ public class GrabController : MonoBehaviour
         if (_heldRb == null || cameraHolder == null) return;
 
         Vector3 target = cameraHolder.position + cameraHolder.forward * holdDistance;
-        _heldRb.transform.position = Vector3.Lerp(
-            _heldRb.transform.position, target, Time.deltaTime * 20f);
+        // MovePosition is correct for kinematic Rigidbodies — it goes through
+        // the physics engine so interpolation and collision sweeps are respected.
+        _heldRb.MovePosition(Vector3.Lerp(_heldRb.position, target, Time.deltaTime * 15f));
     }
 
     // ---------------------------------------------------------------
     // Hold rotation — independent world-space quaternion
-    // Mouse X/Y rotates around world Up/Right axes
-    // Scroll rotates around world Forward axis (roll)
+    // Scroll wheel rotates object on Y axis
     // Camera movement does NOT affect this rotation
     // ---------------------------------------------------------------
     private void UpdateHoldRotation()
     {
         if (_heldRb == null) return;
 
-        // Scroll wheel rotates object horizontally (Y axis)
         float scroll = Input.GetAxis("Mouse ScrollWheel") * scrollRollSpeed;
         if (Mathf.Abs(scroll) > 0.001f)
             _holdRotation = Quaternion.AngleAxis(-scroll, Vector3.up) * _holdRotation;
 
-        _heldRb.transform.rotation = Quaternion.Slerp(
-            _heldRb.transform.rotation, _holdRotation, Time.deltaTime * 15f);
+        // MoveRotation for the same reason as MovePosition — physics-aware.
+        _heldRb.MoveRotation(Quaternion.Slerp(_heldRb.rotation, _holdRotation, Time.deltaTime * 15f));
     }
 
         // ---------------------------------------------------------------

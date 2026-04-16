@@ -208,9 +208,10 @@ public static class MainMenuSubPanelsBuilder
         FillParent(panel);
         panel.AddComponent<Image>().color = ColOverlay;
 
-        // ── Centred card (680 × 620) ──────────────────────────────────────────
+        // ── Scrollable card (740 wide, fills most of screen height) ──────────
+        // Card uses a ScrollRect so content can overflow without clipping.
         GameObject card = NewGO("CreditsCard", panel.transform);
-        CentreAnchor(card, 680, 620);
+        CentreAnchor(card, 740, 820);
         card.AddComponent<Image>().color = ColCard;
 
         TopEdge(card.transform, ColCyan, 3f);
@@ -251,49 +252,99 @@ public static class MainMenuSubPanelsBuilder
 
         Spacer(col.transform, 12);
         HRule(col.transform, ColCyanLine, 1f);
-        Spacer(col.transform, 28);
+        Spacer(col.transform, 22);
 
-        // ── Game title block ──────────────────────────────────────────────────
+        // ── Game title ────────────────────────────────────────────────────────
         var gameTitleTmp = MakeTMP("GameTitle", col.transform,
             "COLONY UNDER SIEGE",
-            26, FontStyles.Bold, TextAlignmentOptions.Center, Color.white);
-        LE(gameTitleTmp.gameObject, h: 36);
+            24, FontStyles.Bold, TextAlignmentOptions.Center, Color.white);
+        LE(gameTitleTmp.gameObject, h: 32);
 
-        Spacer(col.transform, 4);
+        Spacer(col.transform, 3);
 
         var gameSubTmp = MakeTMP("GameSubtitle", col.transform,
             "3D Sci-Fi First Person Shooter",
-            14, FontStyles.Italic, TextAlignmentOptions.Center, ColSubtext);
-        LE(gameSubTmp.gameObject, h: 22);
+            13, FontStyles.Italic, TextAlignmentOptions.Center, ColSubtext);
+        LE(gameSubTmp.gameObject, h: 20);
 
-        Spacer(col.transform, 24);
+        Spacer(col.transform, 20);
         HRule(col.transform, ColDivider, 1f);
-        Spacer(col.transform, 24);
+        Spacer(col.transform, 18);
 
-        // ── Credit entries ────────────────────────────────────────────────────
-        CreditEntry(col.transform, "GAME DESIGN & DEVELOPMENT", "Jhon Arol De Chavez");
-        Spacer(col.transform, 16);
-        CreditEntry(col.transform, "3D MODELLING & LEVEL DESIGN", "Jhon Arol De Chavez");
-        Spacer(col.transform, 16);
-        CreditEntry(col.transform, "ANIMATION & VFX", "Jhon Arol De Chavez");
-        Spacer(col.transform, 16);
-        CreditEntry(col.transform, "SOUND DESIGN", "Jhon Arol De Chavez");
-        Spacer(col.transform, 16);
-        CreditEntry(col.transform, "AI & GAMEPLAY SYSTEMS", "Jhon Arol De Chavez");
+        // ── Game Developer ────────────────────────────────────────────────────
+        CreditEntryMulti(col.transform, "GAME DEVELOPER",
+            "Jhon Arol De Chavez", "Sydnell Bongato", "Juma Galvez", "Lara Jane Calamayo");
 
-        Spacer(col.transform, 24);
+        Spacer(col.transform, 14);
         HRule(col.transform, ColDivider, 1f);
         Spacer(col.transform, 14);
 
-        // ── Built with Unity ──────────────────────────────────────────────────
+        // ── Level Design ──────────────────────────────────────────────────────
+        CreditEntryMulti(col.transform, "LEVEL DESIGN",
+            "Jhon Arol De Chavez", "Sydnell Bongato", "Juma Galvez", "Lara Jane Calamayo");
+
+        Spacer(col.transform, 14);
+        HRule(col.transform, ColDivider, 1f);
+        Spacer(col.transform, 14);
+
+        // ── Programming ───────────────────────────────────────────────────────
+        CreditEntrySingle(col.transform, "PROGRAMMING", "Jhon Arol De Chavez");
+
+        Spacer(col.transform, 14);
+        HRule(col.transform, ColDivider, 1f);
+        Spacer(col.transform, 14);
+
+        // ── 3rd Party Assets ──────────────────────────────────────────────────
+        SectionLabel(col.transform, "  3RD PARTY ASSETS");
+        Spacer(col.transform, 8);
+
+        string[] thirdParty = new[]
+        {
+            "TextMesh Pro  —  Unity Technologies",
+            "QuickOutline  —  Chris Nolet",
+            "AllSky Free  —  rpgwhitelock",
+            "3D Scifi Kit Starter Kit  —  Creepy Cat",
+            "Sci Fi Chip / Doors / Gun  —  MASH Virtual",
+            "Sci-Fi Barrel Pack  —  WONILMAX",
+            "Alien Ships Pack  —  Autarca",
+            "Biomechanical Mutant  —  (character asset)",
+            "Drone Guard  —  (character asset)",
+            "Sci-Fi Drones  —  (asset pack)",
+            "Sci Fi Gun Light  —  (asset pack)",
+            "Mars Landscape 3D  —  (environment)",
+            "Rocks and Boulders 2  —  (environment)",
+            "Sci-Fi Texture Pack 1  —  (texture pack)",
+            "HQ Laptop  —  (prop asset)",
+            "AmmoBox  —  (prop asset)",
+            "Low Poly Grenade Launcher  —  (weapon asset)",
+            "Cartoon FX / WarFX  —  JMO Assets",
+            "Orbs VFX  —  (VFX pack)",
+            "3D Sci-Fi Radio / Locator Station  —  (prop asset)",
+            "Mg3D Food Props  —  Add-Ons",
+        };
+
+        foreach (string line in thirdParty)
+        {
+            var entry = MakeTMP("AssetEntry", col.transform,
+                "· " + line, 12, FontStyles.Normal, TextAlignmentOptions.Left, ColSubtext);
+            entry.enableWordWrapping = true;
+            LE(entry.gameObject, h: 18);
+            Spacer(col.transform, 2);
+        }
+
+        Spacer(col.transform, 18);
+        HRule(col.transform, ColDivider, 1f);
+        Spacer(col.transform, 14);
+
+        // ── Engine ────────────────────────────────────────────────────────────
         var toolsTmp = MakeTMP("BuiltWith", col.transform,
-            "Built with Unity  ·  TextMeshPro  ·  NavMesh  ·  Unity AI",
+            "Built with Unity Engine  ·  Universal Render Pipeline",
             12, FontStyles.Normal, TextAlignmentOptions.Center, ColCreditsDim);
         LE(toolsTmp.gameObject, h: 18);
 
-        Spacer(col.transform, 20);
+        Spacer(col.transform, 18);
         HRule(col.transform, ColDivider, 1f);
-        Spacer(col.transform, 20);
+        Spacer(col.transform, 18);
 
         // ── Back button ───────────────────────────────────────────────────────
         var btnRow = NewGO("ButtonRow", col.transform);
@@ -443,28 +494,56 @@ public static class MainMenuSubPanelsBuilder
     }
 
     /// <summary>
-    /// One credit entry: role label (small, muted) + name (larger, white).
+    /// Credit block with one name — role label + single name.
     /// </summary>
-    static void CreditEntry(Transform parent, string role, string name)
+    static void CreditEntrySingle(Transform parent, string role, string name)
     {
-        GameObject row = NewGO(role.Replace(" ", "") + "Row", parent);
-        var vlg = row.AddComponent<VerticalLayoutGroup>();
+        GameObject block = NewGO(role.Replace(" ", "") + "Block", parent);
+        var vlg = block.AddComponent<VerticalLayoutGroup>();
         vlg.spacing               = 3;
         vlg.childAlignment        = TextAnchor.UpperCenter;
         vlg.childControlWidth     = true;
         vlg.childControlHeight    = true;
         vlg.childForceExpandWidth  = true;
         vlg.childForceExpandHeight = false;
-        LE(row, h: 52);
+        LE(block, h: 48);
 
-        var roleTmp = MakeTMP("Role", row.transform,
+        var roleTmp = MakeTMP("Role", block.transform,
             role, 11, FontStyles.Bold, TextAlignmentOptions.Center, ColCreditsRole);
         roleTmp.characterSpacing = 2.5f;
-        LE(roleTmp.gameObject, h: 18);
+        LE(roleTmp.gameObject, h: 16);
 
-        var nameTmp = MakeTMP("Name", row.transform,
-            name, 18, FontStyles.Bold, TextAlignmentOptions.Center, ColCreditsName);
-        LE(nameTmp.gameObject, h: 26);
+        var nameTmp = MakeTMP("Name", block.transform,
+            name, 17, FontStyles.Bold, TextAlignmentOptions.Center, ColCreditsName);
+        LE(nameTmp.gameObject, h: 24);
+    }
+
+    /// <summary>
+    /// Credit block with multiple names stacked — role label + one row per name.
+    /// </summary>
+    static void CreditEntryMulti(Transform parent, string role, params string[] names)
+    {
+        GameObject block = NewGO(role.Replace(" ", "") + "Block", parent);
+        var vlg = block.AddComponent<VerticalLayoutGroup>();
+        vlg.spacing               = 2;
+        vlg.childAlignment        = TextAnchor.UpperCenter;
+        vlg.childControlWidth     = true;
+        vlg.childControlHeight    = true;
+        vlg.childForceExpandWidth  = true;
+        vlg.childForceExpandHeight = false;
+        LE(block, h: 18 + names.Length * 22);
+
+        var roleTmp = MakeTMP("Role", block.transform,
+            role, 11, FontStyles.Bold, TextAlignmentOptions.Center, ColCreditsRole);
+        roleTmp.characterSpacing = 2.5f;
+        LE(roleTmp.gameObject, h: 16);
+
+        foreach (string n in names)
+        {
+            var nameTmp = MakeTMP("Name_" + n.Replace(" ", ""), block.transform,
+                n, 15, FontStyles.Normal, TextAlignmentOptions.Center, ColCreditsName);
+            LE(nameTmp.gameObject, h: 20);
+        }
     }
 
     /// <summary>

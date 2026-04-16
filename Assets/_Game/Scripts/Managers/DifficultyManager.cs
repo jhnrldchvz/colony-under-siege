@@ -10,9 +10,8 @@ using UnityEngine;
 /// ║                                                                           ║
 /// ║  Every <evaluationInterval> seconds the manager:                          ║
 /// ║    1. Samples window accuracy  (hits / shots in the window)               ║
-/// ║    2. Samples player health ratio  (currentHP / maxHP)                    ║
-/// ║    3. Feeds both into FuzzyDDA.Evaluate() → crisp score in [0, 1]        ║
-/// ║    4. Linearly interpolates all enemy stat multipliers between the        ║
+/// ║    2. Feeds accuracy into FuzzyDDA.Evaluate() → crisp score in [0, 1]   ║
+/// ║    3. Linearly interpolates all enemy stat multipliers between the        ║
 /// ║       Easy anchor (score=0) and Hard anchor (score=1) via Normal (0.5)   ║
 /// ║    5. Applies the interpolated settings to every living enemy via         ║
 /// ║       EnemyAI.ApplyDifficultySettings()                                  ║
@@ -161,23 +160,6 @@ public class DifficultyManager : MonoBehaviour
         _shotsInWindow > 0 ? (float)_hitsInWindow / _shotsInWindow : 0f;
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Player reference (for health ratio)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private PlayerController _player;
-
-    private float HealthRatio
-    {
-        get
-        {
-            if (_player == null) return 1f;   // Default to full health if no reference
-            return _player.maxHealth > 0
-                ? Mathf.Clamp01((float)_player.CurrentHealth / _player.maxHealth)
-                : 1f;
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
     // Lifecycle
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -191,7 +173,6 @@ public class DifficultyManager : MonoBehaviour
         yield return null;   // frame 1 — enemies call Start() and register
         yield return null;   // frame 2 — safety buffer
 
-        CachePlayer();
         ApplyFuzzyScoreToAllEnemies(CurrentFuzzyScore);
         Debug.Log("[DifficultyManager] FL-DDA initialised. " +
                   $"Starting score: {CurrentFuzzyScore:F3} | tier: {CurrentTier}");
@@ -229,19 +210,10 @@ public class DifficultyManager : MonoBehaviour
 
         ResetWindow();
         _evalTimer = 0f;
-        CachePlayer();
         ApplyFuzzyScoreToAllEnemies(CurrentFuzzyScore);
 
         Debug.Log($"[DifficultyManager] Scene loaded — persisted score {CurrentFuzzyScore:F3} " +
                   $"({CurrentTier}) applied. Window reset.");
-    }
-
-    private void CachePlayer()
-    {
-        _player = FindFirstObjectByType<PlayerController>();
-        if (_player == null && IsGameScene)
-            Debug.LogWarning("[DifficultyManager] PlayerController not found — " +
-                             "health ratio will default to 1.0 (full health).");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -281,11 +253,10 @@ public class DifficultyManager : MonoBehaviour
             return;
         }
 
-        float accuracy    = WindowAccuracy;
-        float healthRatio = HealthRatio;
+        float accuracy = WindowAccuracy;
 
         // ── Fuzzy inference ─────────────────────────────────────────────────
-        float newScore = FuzzyDDA.Evaluate(accuracy, healthRatio, out FuzzyDebugSnapshot snap);
+        float newScore = FuzzyDDA.Evaluate(accuracy, out FuzzyDebugSnapshot snap);
 
         ResetWindow();
 
@@ -293,8 +264,7 @@ public class DifficultyManager : MonoBehaviour
         CurrentFuzzyScore = newScore;
         LastSnapshot      = snap;
 
-        Debug.Log($"[DifficultyManager] FL-DDA eval | acc={accuracy * 100f:F0}% " +
-                  $"hp={healthRatio * 100f:F0}% | {snap}");
+        Debug.Log($"[DifficultyManager] FL-DDA eval | acc={accuracy * 100f:F0}% | {snap}");
 
         // ── Apply to enemies ────────────────────────────────────────────────
         ApplyFuzzyScoreToAllEnemies(newScore);
@@ -472,7 +442,6 @@ public class DifficultyManager : MonoBehaviour
     {
         return $"FL-DDA | Score: {CurrentFuzzyScore:F3} | Tier: {CurrentTier} | " +
                $"Window: {WindowAccuracy * 100f:F0}% ({_hitsInWindow}/{_shotsInWindow}) | " +
-               $"HP ratio: {HealthRatio * 100f:F0}% | " +
                $"Lifetime acc: {LifetimeAccuracy * 100f:F0}%";
     }
 
@@ -485,15 +454,9 @@ public class DifficultyManager : MonoBehaviour
             $"  Low:    {s.accLow  :F3}\n" +
             $"  Medium: {s.accMed  :F3}\n" +
             $"  High:   {s.accHigh :F3}\n" +
-            $"── HP memberships ─────────\n" +
-            $"  Low:    {s.hpLow   :F3}\n" +
-            $"  Medium: {s.hpMed   :F3}\n" +
-            $"  High:   {s.hpHigh  :F3}\n" +
             $"── Output weights ─────────\n" +
             $"  VeryEasy: {s.wVeryEasy:F3}\n" +
-            $"  Easy:     {s.wEasy    :F3}\n" +
             $"  Normal:   {s.wNormal  :F3}\n" +
-            $"  Hard:     {s.wHard    :F3}\n" +
             $"  VeryHard: {s.wVeryHard:F3}\n" +
             $"── Result ─────────────────\n" +
             $"  Score: {s.crisp:F4}";
