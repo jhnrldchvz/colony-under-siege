@@ -92,11 +92,25 @@ public class WeaponController : MonoBehaviour
     // ---------------------------------------------------------------
     // Private runtime state
     // ---------------------------------------------------------------
+    private static readonly KeyCode[] WeaponHotkeys =
+    {
+        KeyCode.Alpha1,
+        KeyCode.Alpha2,
+        KeyCode.Alpha3,
+        KeyCode.Alpha4,
+        KeyCode.Alpha5,
+        KeyCode.Alpha6,
+        KeyCode.Alpha7,
+        KeyCode.Alpha8,
+        KeyCode.Alpha9
+    };
+
     private int  _currentWeaponIndex = 0;
     private float _nextFireTime      = 0f;
     private bool  _isReloading       = false;
     private bool  _fireHeld          = false;
     private bool  _weaponHidden      = false;
+    private int[] _hudDisplayToWeaponIndex;
 
     private GrabController      _grab;
     private InputSystem_Actions _inputs;
@@ -162,6 +176,7 @@ public class WeaponController : MonoBehaviour
     private void OnDisable()
     {
         _inputs.Player.Disable();
+        UIManager.Instance?.BindWeaponSlotSelector(null);
     }
 
     private void Start()
@@ -196,6 +211,8 @@ public class WeaponController : MonoBehaviour
             }
         }
 
+        UIManager.Instance?.BindWeaponSlotSelector(OnHUDWeaponSelected);
+
         RefreshHUD();
         ShowActiveModel();
         Debug.Log($"[WeaponController] Ready. Current weapon: {Current.displayName}");
@@ -213,9 +230,7 @@ public class WeaponController : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(KeyCode.Alpha1) && IsWeaponAvailable(0)) SwitchToIndex(0);
-        if (Input.GetKeyDown(KeyCode.Alpha2) && IsWeaponAvailable(1)) SwitchToIndex(1);
-        if (Input.GetKeyDown(KeyCode.Alpha3) && IsWeaponAvailable(2)) SwitchToIndex(2);
+        HandleWeaponHotkeys();
 
         bool isHolding = _grab != null && _grab.IsHolding;
         if (isHolding != _weaponHidden)
@@ -463,6 +478,60 @@ public class WeaponController : MonoBehaviour
         }
     }
 
+    private void HandleWeaponHotkeys()
+    {
+        for (int slotIndex = 0; slotIndex < WeaponHotkeys.Length; slotIndex++)
+        {
+            if (!Input.GetKeyDown(WeaponHotkeys[slotIndex])) continue;
+
+            // Keep keyboard mapping stable by weapon config order:
+            // 1 -> weapons[0] (Rifle), 2 -> weapons[1] (Pistol), etc.
+            if (slotIndex >= weapons.Length) return;
+            if (!IsWeaponAvailable(slotIndex)) return;
+
+            SwitchToIndex(slotIndex);
+
+            return;
+        }
+    }
+
+    private int GetWeaponIndexForVisibleSlot(int visibleSlot)
+    {
+        if (visibleSlot < 0 || _hudDisplayToWeaponIndex == null ||
+            visibleSlot >= _hudDisplayToWeaponIndex.Length)
+            return -1;
+
+        return _hudDisplayToWeaponIndex[visibleSlot];
+    }
+
+    private void OnHUDWeaponSelected(int visibleSlot)
+    {
+        int weaponIndex = GetWeaponIndexForVisibleSlot(visibleSlot);
+        if (weaponIndex < 0 || weaponIndex >= weapons.Length) return;
+        SwitchToIndex(weaponIndex);
+    }
+
+    private string GetHotkeyLabelForWeaponIndex(int weaponIndex)
+    {
+        if (weaponIndex < 0 || weaponIndex >= WeaponHotkeys.Length)
+            return string.Empty;
+
+        return KeyCodeToLabel(WeaponHotkeys[weaponIndex]);
+    }
+
+    private string KeyCodeToLabel(KeyCode keyCode)
+    {
+        string raw = keyCode.ToString();
+
+        if (raw.StartsWith("Alpha"))
+            return raw.Substring("Alpha".Length);
+
+        if (raw.StartsWith("Keypad"))
+            return "KP " + raw.Substring("Keypad".Length);
+
+        return raw;
+    }
+
     // ---------------------------------------------------------------
     // HUD
     // ---------------------------------------------------------------
@@ -472,9 +541,70 @@ public class WeaponController : MonoBehaviour
 
         int current = InventoryManager.Instance.GetCurrentAmmo(Current.type);
         int reserve = InventoryManager.Instance.GetReserveAmmo(Current.type);
+        int weaponCount = weapons.Length;
+
+        if (_hudDisplayToWeaponIndex == null || _hudDisplayToWeaponIndex.Length != weaponCount)
+            _hudDisplayToWeaponIndex = new int[weaponCount];
+
+        bool[] availableMask = new bool[weaponCount];
+        Sprite[] weaponIcons = new Sprite[weaponCount];
+        string[] weaponNames = new string[weaponCount];
+        string[] weaponKeyLabels = new string[weaponCount];
+        int[] orderedWeaponIndices = new int[weaponCount];
+
+        for (int i = 0; i < weaponCount; i++)
+            _hudDisplayToWeaponIndex[i] = -1;
+
+        int visibleCount = 0;
+        for (int i = 0; i < weaponCount; i++)
+        {
+            if (!IsWeaponAvailable(i)) continue;
+            orderedWeaponIndices[visibleCount] = i;
+            visibleCount++;
+        }
+
+        if (UIManager.Instance.swapSelectedWeaponToPrimary && visibleCount > 1)
+        {
+            int selectedPos = -1;
+            for (int i = 0; i < visibleCount; i++)
+            {
+                if (orderedWeaponIndices[i] == _currentWeaponIndex)
+                {
+                    selectedPos = i;
+                    break;
+                }
+            }
+
+            if (selectedPos > 0)
+            {
+                int firstWeapon = orderedWeaponIndices[0];
+                orderedWeaponIndices[0] = orderedWeaponIndices[selectedPos];
+                orderedWeaponIndices[selectedPos] = firstWeapon;
+            }
+        }
+
+        int selectedDisplayIndex = 0;
+        for (int displayIndex = 0; displayIndex < visibleCount; displayIndex++)
+        {
+            int actualWeaponIndex = orderedWeaponIndices[displayIndex];
+            _hudDisplayToWeaponIndex[displayIndex] = actualWeaponIndex;
+            availableMask[displayIndex] = true;
+            weaponIcons[displayIndex] = weapons[actualWeaponIndex].icon;
+            weaponNames[displayIndex] = weapons[actualWeaponIndex].displayName;
+            weaponKeyLabels[displayIndex] = GetHotkeyLabelForWeaponIndex(actualWeaponIndex);
+
+            if (actualWeaponIndex == _currentWeaponIndex)
+                selectedDisplayIndex = displayIndex;
+        }
 
         UIManager.Instance.UpdateAmmo(current, reserve);
         UIManager.Instance.UpdateWeaponDisplay(Current.displayName, Current.icon);
+        UIManager.Instance.UpdateWeaponStrip(
+            weaponIcons,
+            weaponNames,
+            availableMask,
+            selectedDisplayIndex,
+            weaponKeyLabels);
     }
 
     // ---------------------------------------------------------------

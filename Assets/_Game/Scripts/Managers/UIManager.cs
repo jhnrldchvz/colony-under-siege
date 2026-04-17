@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -73,6 +74,31 @@ public class UIManager : MonoBehaviour
 
     [Tooltip("Image displaying the current weapon icon — swap sprite on switch")]
     public UnityEngine.UI.Image weaponIcon;
+
+    [Header("HUD — Weapon Strip")]
+    [Tooltip("Slot root transforms used for weapon icons (left-to-right order)")]
+    public RectTransform[] weaponSlotRoots;
+
+    [Tooltip("Icon images for each HUD weapon slot")]
+    public UnityEngine.UI.Image[] weaponSlotIcons;
+
+    [Tooltip("Optional key labels for each slot (1, 2, 3, ...)")]
+    public TextMeshProUGUI[] weaponSlotKeyTexts;
+
+    [Tooltip("Optional buttons for selecting a weapon directly from HUD")]
+    public Button[] weaponSlotButtons;
+
+    [Tooltip("Scale multiplier applied to the currently selected weapon icon")]
+    public float selectedWeaponIconScale = 1.35f;
+
+    [Tooltip("Scale multiplier applied to non-selected weapon icons")]
+    public float unselectedWeaponIconScale = 0.9f;
+
+    [Tooltip("Move the selected weapon slot to the first position in the strip")]
+    public bool swapSelectedWeaponToPrimary = true;
+
+    [Tooltip("Weapon slot label format. {0}=key label, {1}=weapon label (from WeaponConfig displayName)")]
+    public string weaponSlotLabelFormat = "{0} {1}";
 
     [Header("HUD — Objectives")]
     [Tooltip("Small text panel in the corner listing active objectives")]
@@ -285,6 +311,9 @@ public class UIManager : MonoBehaviour
     private bool        _slideTransitioning = false;
     private bool        _sbTransitioning    = false;
     private Coroutine   _typewriterCoroutine;
+    private int[]       _weaponSlotToWeaponIndex;
+    private Action<int> _onWeaponSlotSelected;
+    private bool        _warnedDuplicateWeaponSlotIcons;
 
     // PlayerPrefs keys
     private const string KEY_SENSITIVITY    = "MouseSensitivity";
@@ -405,6 +434,7 @@ public class UIManager : MonoBehaviour
         winRestartButton?     .onClick.AddListener(RestartScene);
         nextLevelButton?      .onClick.AddListener(() => { Time.timeScale = 1f; LevelManager.Instance?.LoadNextLevel(); });
         mainMenuButton?       .onClick.AddListener(GoToMainMenu);
+        HookWeaponSlotButtons();
 
     }
 
@@ -1152,6 +1182,97 @@ public class UIManager : MonoBehaviour
         }
     }
 
+
+    /// <summary>
+    /// Binds a callback used when the player clicks/taps a weapon slot in the HUD.
+    /// </summary>
+    public void BindWeaponSlotSelector(Action<int> onWeaponSelected)
+    {
+        _onWeaponSlotSelected = onWeaponSelected;
+        HookWeaponSlotButtons();
+    }
+
+    /// <summary>
+    /// Updates the weapon strip with only currently available weapons in this level.
+    /// The selected weapon is enlarged and can be moved to the first slot position.
+    /// </summary>
+    public void UpdateWeaponStrip(Sprite[] weaponIcons, string[] weaponNames, bool[] availableMask, int selectedWeaponIndex, string[] weaponKeyLabels = null)
+    {
+        if (weaponSlotRoots == null || weaponSlotRoots.Length == 0 ||
+            weaponIcons == null || availableMask == null)
+            return;
+
+        WarnIfDuplicateSlotIconReferences();
+
+        int slotCount = weaponSlotRoots.Length;
+        if (_weaponSlotToWeaponIndex == null || _weaponSlotToWeaponIndex.Length != slotCount)
+            _weaponSlotToWeaponIndex = new int[slotCount];
+
+        for (int i = 0; i < slotCount; i++)
+        {
+            _weaponSlotToWeaponIndex[i] = -1;
+            if (weaponSlotRoots[i] != null)
+                weaponSlotRoots[i].gameObject.SetActive(false);
+        }
+
+        int slot = 0;
+        for (int weaponIndex = 0; weaponIndex < availableMask.Length && weaponIndex < weaponIcons.Length; weaponIndex++)
+        {
+            if (!availableMask[weaponIndex]) continue;
+            if (slot >= slotCount) break;
+
+            RectTransform root = weaponSlotRoots[slot];
+            if (root == null)
+            {
+                slot++;
+                continue;
+            }
+
+            bool isSelected = weaponIndex == selectedWeaponIndex;
+
+            _weaponSlotToWeaponIndex[slot] = weaponIndex;
+            root.gameObject.SetActive(true);
+            root.localScale = Vector3.one * (isSelected ? selectedWeaponIconScale : unselectedWeaponIconScale);
+
+            Image slotIcon = ResolveSlotIconImage(slot, root);
+            if (slotIcon != null)
+            {
+                slotIcon.sprite = weaponIcons[weaponIndex];
+                slotIcon.enabled = weaponIcons[weaponIndex] != null;
+                slotIcon.color = isSelected ? Color.white : new Color(0.8f, 0.8f, 0.8f, 1f);
+            }
+
+            if (weaponSlotKeyTexts != null && slot < weaponSlotKeyTexts.Length && weaponSlotKeyTexts[slot] != null)
+            {
+                string keyLabel = weaponKeyLabels != null && weaponIndex < weaponKeyLabels.Length
+                    ? weaponKeyLabels[weaponIndex]
+                    : string.Empty;
+                string weaponLabel = weaponNames != null && weaponIndex < weaponNames.Length
+                    ? weaponNames[weaponIndex]
+                    : string.Empty;
+
+                string format = string.IsNullOrEmpty(weaponSlotLabelFormat)
+                    ? "{0} {1}"
+                    : weaponSlotLabelFormat;
+
+                string displayLabel = format
+                    .Replace("{0}", keyLabel)
+                    .Replace("{1}", weaponLabel)
+                    .Trim();
+
+                if (string.IsNullOrEmpty(displayLabel))
+                    displayLabel = !string.IsNullOrEmpty(weaponLabel) ? weaponLabel : keyLabel;
+
+                weaponSlotKeyTexts[slot].text = displayLabel;
+            }
+
+            if (swapSelectedWeaponToPrimary && isSelected)
+                root.SetAsFirstSibling();
+
+            slot++;
+        }
+    }
+
     /// <summary>
     /// Updates the objective tracker text.
     /// ObjectiveManager calls this when any objective's progress changes.
@@ -1296,4 +1417,86 @@ public class UIManager : MonoBehaviour
             if (crosshair != null) crosshair.SetActive(false);
         }
     }
+
+    private Image ResolveSlotIconImage(int slot, RectTransform root)
+    {
+        if (root == null) return null;
+
+        if (weaponSlotIcons != null && slot < weaponSlotIcons.Length)
+        {
+            Image configured = weaponSlotIcons[slot];
+            if (configured != null && (configured.transform == root || configured.transform.IsChildOf(root)))
+                return configured;
+        }
+
+        Image[] candidates = root.GetComponentsInChildren<Image>(true);
+        for (int i = 0; i < candidates.Length; i++)
+        {
+            Image img = candidates[i];
+            if (img != null && img.transform != root && img.name.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0)
+                return img;
+        }
+
+        for (int i = 0; i < candidates.Length; i++)
+        {
+            Image img = candidates[i];
+            if (img != null && img.transform != root)
+                return img;
+        }
+
+        return root.GetComponent<Image>();
+    }
+
+    private void WarnIfDuplicateSlotIconReferences()
+    {
+        if (_warnedDuplicateWeaponSlotIcons || weaponSlotIcons == null) return;
+
+        for (int i = 0; i < weaponSlotIcons.Length; i++)
+        {
+            Image a = weaponSlotIcons[i];
+            if (a == null) continue;
+
+            for (int j = i + 1; j < weaponSlotIcons.Length; j++)
+            {
+                Image b = weaponSlotIcons[j];
+                if (b == null) continue;
+
+                if (a == b)
+                {
+                    _warnedDuplicateWeaponSlotIcons = true;
+                    Debug.LogWarning("[UIManager] Duplicate entries found in weaponSlotIcons. " +
+                                     "Multiple slots are referencing the same Image component; " +
+                                     "this can make different slots show the same icon.");
+                    return;
+                }
+            }
+        }
+    }
+
+    private void HookWeaponSlotButtons()
+    {
+        if (weaponSlotButtons == null) return;
+
+        for (int i = 0; i < weaponSlotButtons.Length; i++)
+        {
+            Button button = weaponSlotButtons[i];
+            if (button == null) continue;
+
+            int slotIndex = i;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => OnWeaponSlotPressed(slotIndex));
+        }
+    }
+
+    private void OnWeaponSlotPressed(int slotIndex)
+    {
+        if (_onWeaponSlotSelected == null || _weaponSlotToWeaponIndex == null) return;
+        if (slotIndex < 0 || slotIndex >= _weaponSlotToWeaponIndex.Length) return;
+
+        int weaponIndex = _weaponSlotToWeaponIndex[slotIndex];
+        if (weaponIndex < 0) return;
+
+        _onWeaponSlotSelected.Invoke(weaponIndex);
+    }
+
 }
